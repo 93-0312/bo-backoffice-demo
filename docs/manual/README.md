@@ -12,7 +12,7 @@
 | 02 | [거래내역](./02-transactions.md) | 셀러 > 분할정산 > 거래내역 | `/settlement/transactions` | ✅ 구현 |
 | 03 | [정산 리스트](./03-settlement-list.md) | 셀러 > 분할정산 > 정산 리스트 | `/settlement/list` | ✅ 구현 |
 | 04 | [영중소 정산서 목록](./04-sme-settlements.md) | 영중소 정산서 목록 | `/settlement/sme` | ✅ 구현 |
-| 05 | [거래 상세 · 환불](./05-refund.md) | 거래 상세 내역 / 환불하기 모달 | (예정) | 📝 기획 |
+| 05 | [거래 상세 · 환불](./05-refund.md) | 환불하기 모달 | 거래내역 행 → `환불` | ✅ 구현 |
 | 06 | [SID 지급 보류 처리](./06-sid-hold.md) | SID 지급 보류 처리 | (예정) | 📝 기획 |
 
 ## 메뉴 구조 (현행 가능 구조)
