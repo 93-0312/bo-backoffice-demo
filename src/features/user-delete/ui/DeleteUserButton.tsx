@@ -64,7 +64,9 @@ export function DeleteUserButton({
             </DialogDescription>
           </DialogHeader>
           {error && (
-            <Alert type="error" title={error} className="mt-1" />
+            <div className="px-6 pb-2">
+              <Alert type="error" title={error} />
+            </div>
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>

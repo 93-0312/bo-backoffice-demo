@@ -78,7 +78,7 @@ export function CreateUserButton({ onCreated }: { onCreated?: (user: User) => vo
             </DialogDescription>
           </DialogHeader>
 
-          <form id="create-user-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form id="create-user-form" onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-4">
             <Field label="이름" htmlFor="cu-name" required>
               <Input
                 id="cu-name"

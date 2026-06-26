@@ -125,14 +125,16 @@ export function SellerRefundModal({
         </DialogHeader>
 
         {rows === null ? (
-          <div className="grid h-40 place-items-center">
+          <div className="grid h-40 place-items-center px-6">
             <Spinner size="lg" />
           </div>
         ) : blocked ? (
           <>
-            <Alert type="error" title="환불 처리를 진행할 수 없습니다">
-              셀러 거래내역이 들어와야 환불이 가능합니다.
-            </Alert>
+            <div className="px-6 py-4">
+              <Alert type="error" title="환불 처리를 진행할 수 없습니다">
+                셀러 거래내역이 들어와야 환불이 가능합니다.
+              </Alert>
+            </div>
             <DialogFooter>
               <Button variant="ghost" onClick={onClose}>
                 닫기
@@ -141,13 +143,15 @@ export function SellerRefundModal({
           </>
         ) : step === "confirm" ? (
           <>
-            <p className="text-sm text-muted-foreground">
-              선택한 <b className="text-foreground">{count}</b>개 / 총{" "}
-              <b className="text-foreground">{formatNumber(sum)}.00 {currency}</b> 환불을 실행합니다.
-              <br />
-              실행 후 취소할 수 없습니다.
-            </p>
-            {error && <Alert type="error" title={error} className="mt-2" />}
+            <div className="px-6 py-4">
+              <p className="text-sm text-muted-foreground">
+                선택한 <b className="text-foreground">{count}</b>개 / 총{" "}
+                <b className="text-foreground">{formatNumber(sum)}.00 {currency}</b> 환불을 실행합니다.
+                <br />
+                실행 후 취소할 수 없습니다.
+              </p>
+              {error && <Alert type="error" title={error} className="mt-2" />}
+            </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setStep("form")} disabled={pending}>
                 취소
@@ -159,6 +163,7 @@ export function SellerRefundModal({
           </>
         ) : (
           <>
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4">
             {/* 기본 정보 */}
             <div className="flex items-center justify-between rounded-radius-lg bg-muted px-3 py-2.5 text-sm">
               <div>
@@ -202,7 +207,7 @@ export function SellerRefundModal({
                   </span>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto rounded-radius-lg border border-border">
+                <div className="rounded-radius-lg border border-border">
                   {visible.map((r) => {
                     const on = !!checked[r.stid];
                     return (
@@ -246,6 +251,7 @@ export function SellerRefundModal({
                 </div>
               </>
             )}
+            </div>
 
             <DialogFooter>
               <Button size="lg" className="w-full" disabled={!canSubmit} onClick={() => setStep("confirm")}>
