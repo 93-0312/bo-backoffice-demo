@@ -7,6 +7,9 @@ export type {
 export { SELLER_TX_TYPE_LABEL, SELLER_TX_STATE_LABEL } from "./model/types";
 export {
   fetchSellerTransactions,
+  fetchStidsByTid,
+  refundStids,
   type SellerTxListParams,
+  type RefundItem,
 } from "./api/sellerTransactionApi";
 export { SellerTxTypeBadge, SellerTxStateBadge } from "./ui/SellerTxBadges";

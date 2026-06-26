@@ -24,6 +24,10 @@ export interface SellerTransaction {
   state: SellerTxState;
   currency: string;
   amount: number;
+  /** 상품명 (환불 모달 표시용) */
+  productName: string;
+  /** 환불 가능 금액 (이미 일부 환불됐으면 amount 보다 작음) */
+  refundableAmount: number;
   /** 페이버스 결제 여부 ('페이버스 결제 제외' 필터용) */
   payverse: boolean;
 }

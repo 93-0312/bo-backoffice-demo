@@ -6,6 +6,7 @@ import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
 import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
+import { RefundButton } from "@/features/seller-refund";
 import {
   fetchSellerTransactions,
   SellerTxTypeBadge,
@@ -40,6 +41,7 @@ export function SellerTransactionsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [rows, setRows] = useState<SellerTransaction[] | null>(null);
+  const [version, setVersion] = useState(0);
   const debounced = useDebouncedValue(keyword, 300);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export function SellerTransactionsPage() {
     return () => {
       alive = false;
     };
-  }, [debounced, type, state, excludePayverse]);
+  }, [debounced, type, state, excludePayverse, version]);
 
   useEffect(() => setPage(1), [debounced, type, state, excludePayverse, range, pageSize]);
 
@@ -74,6 +76,11 @@ export function SellerTransactionsPage() {
     { header: "거래 상태", cell: (t) => <SellerTxStateBadge state={t.state} /> },
     { header: "통화", cell: (t) => <span className="text-sm">{t.currency}</span> },
     { header: "금액", align: "right", cell: (t) => <span className="text-sm font-medium tabular-nums">{formatNumber(t.amount)}.00</span> },
+    {
+      header: "환불",
+      align: "right",
+      cell: (t) => <RefundButton tid={t.tid} onRefunded={() => setVersion((v) => v + 1)} />,
+    },
   ];
 
   function reset() {
