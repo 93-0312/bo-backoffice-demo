@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogFooter,
   SegmentedControl,
@@ -125,16 +126,16 @@ export function SellerRefundModal({
         </DialogHeader>
 
         {rows === null ? (
-          <div className="grid h-40 place-items-center px-6">
+          <DialogBody className="grid h-40 place-items-center">
             <Spinner size="lg" />
-          </div>
+          </DialogBody>
         ) : blocked ? (
           <>
-            <div className="px-6 py-4">
+            <DialogBody>
               <Alert type="error" title="환불 처리를 진행할 수 없습니다">
                 셀러 거래내역이 들어와야 환불이 가능합니다.
               </Alert>
-            </div>
+            </DialogBody>
             <DialogFooter>
               <Button variant="ghost" onClick={onClose}>
                 닫기
@@ -143,7 +144,7 @@ export function SellerRefundModal({
           </>
         ) : step === "confirm" ? (
           <>
-            <div className="px-6 py-4">
+            <DialogBody>
               <p className="text-sm text-muted-foreground">
                 선택한 <b className="text-foreground">{count}</b>개 / 총{" "}
                 <b className="text-foreground">{formatNumber(sum)}.00 {currency}</b> 환불을 실행합니다.
@@ -151,7 +152,7 @@ export function SellerRefundModal({
                 실행 후 취소할 수 없습니다.
               </p>
               {error && <Alert type="error" title={error} className="mt-2" />}
-            </div>
+            </DialogBody>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setStep("form")} disabled={pending}>
                 취소
@@ -163,7 +164,7 @@ export function SellerRefundModal({
           </>
         ) : (
           <>
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 py-4">
+            <DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
             {/* 기본 정보 */}
             <div className="flex items-center justify-between rounded-radius-lg bg-muted px-3 py-2.5 text-sm">
               <div>
@@ -251,7 +252,7 @@ export function SellerRefundModal({
                 </div>
               </>
             )}
-            </div>
+            </DialogBody>
 
             <DialogFooter>
               <Button size="lg" className="w-full" disabled={!canSubmit} onClick={() => setStep("confirm")}>

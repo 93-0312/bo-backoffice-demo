@@ -40,6 +40,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -425,9 +426,11 @@ function OverlayShowcase() {
               백드롭 클릭 · ESC · X 로 닫힙니다. 폼/확인 등 일반 모달에 씁니다.
             </DialogDescription>
           </DialogHeader>
-          <p className="px-6 py-4 text-sm text-muted-foreground">
-            여기에 임의의 내용을 넣을 수 있습니다.
-          </p>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              여기에 임의의 내용을 넣을 수 있습니다.
+            </p>
+          </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDialogOpen(false)}>
               닫기

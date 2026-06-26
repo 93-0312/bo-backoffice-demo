@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -64,9 +65,9 @@ export function DeleteUserButton({
             </DialogDescription>
           </DialogHeader>
           {error && (
-            <div className="px-6 pb-2">
+            <DialogBody className="pb-2">
               <Alert type="error" title={error} />
-            </div>
+            </DialogBody>
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>

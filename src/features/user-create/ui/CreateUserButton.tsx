@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -78,7 +79,8 @@ export function CreateUserButton({ onCreated }: { onCreated?: (user: User) => vo
             </DialogDescription>
           </DialogHeader>
 
-          <form id="create-user-form" onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-4">
+          <DialogBody>
+          <form id="create-user-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Field label="이름" htmlFor="cu-name" required>
               <Input
                 id="cu-name"
@@ -106,6 +108,7 @@ export function CreateUserButton({ onCreated }: { onCreated?: (user: User) => vo
               />
             </Field>
           </form>
+          </DialogBody>
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)} type="button">
