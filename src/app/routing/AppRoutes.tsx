@@ -7,6 +7,11 @@ import { DashboardPage } from "@/pages/dashboard";
 import { UsersPage } from "@/pages/users";
 import { ProductsPage } from "@/pages/products";
 import { OrdersPage } from "@/pages/orders";
+import { TransactionsPage } from "@/pages/transactions";
+import { TransactionDetailPage } from "@/pages/transaction-detail";
+import { SidListPage } from "@/pages/settlement-sids";
+import { SellerTransactionsPage } from "@/pages/settlement-transactions";
+import { SettlementListPage } from "@/pages/settlement-list";
 import { SettingsPage } from "@/pages/settings";
 import { NotFoundPage } from "@/pages/not-found";
 
@@ -32,6 +37,12 @@ export function AppRoutes() {
         <Route path={ROUTES.users} element={<UsersPage />} />
         <Route path={ROUTES.products} element={<ProductsPage />} />
         <Route path={ROUTES.orders} element={<OrdersPage />} />
+        <Route path={ROUTES.transactions} element={<TransactionsPage />} />
+        <Route path={ROUTES.transactionDetail()} element={<TransactionDetailPage />} />
+        <Route path={ROUTES.sidList} element={<SidListPage />} />
+        <Route path={ROUTES.sellerTransactions} element={<SellerTransactionsPage />} />
+        <Route path={ROUTES.settlementList} element={<SettlementListPage />} />
+        <Route path={ROUTES.smeSettlements} element={<SettlementListPage sme />} />
         <Route path={ROUTES.settings} element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

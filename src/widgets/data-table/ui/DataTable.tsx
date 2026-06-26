@@ -50,7 +50,10 @@ export function DataTable<T>({
       <TableHeader>
         <TableRow className="hover:bg-transparent">
           {columns.map((col, i) => (
-            <TableHead key={i} className={cn(col.align && alignClass[col.align], col.className)}>
+            <TableHead
+              key={i}
+              className={cn("whitespace-nowrap", col.align && alignClass[col.align], col.className)}
+            >
               {col.header}
             </TableHead>
           ))}
@@ -73,7 +76,14 @@ export function DataTable<T>({
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map((col, i) => (
-                <TableCell key={i} className={cn(col.align && alignClass[col.align], col.className)}>
+                <TableCell
+                  key={i}
+                  className={cn(
+                    "whitespace-nowrap",
+                    col.align && alignClass[col.align],
+                    col.className,
+                  )}
+                >
                   {col.cell(row)}
                 </TableCell>
               ))}

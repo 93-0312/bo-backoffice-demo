@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { NAV_ITEMS } from "@/shared/config";
+import { NAV_GROUPS } from "@/shared/config";
 import { cn } from "@/shared/lib";
 
 /**
  * AppSidebar — 좌측 내비게이션 (widget).
  *
- * widget 은 "여러 조각을 합친 큰 UI 블록"이다. 여기선 shared/config 의 메뉴 데이터를
- * 읽어 NavLink 목록으로 렌더한다. 메뉴 "구성"은 config, "표현"은 이 widget 이 담당.
+ * shared/config 의 그룹 메뉴 데이터를 읽어 섹션 헤더 + NavLink 목록으로 렌더한다.
+ * 메뉴 "구성"은 config, "표현"은 이 widget 이 담당(구성과 표현의 분리).
  */
 export function AppSidebar() {
   return (
@@ -18,24 +18,33 @@ export function AppSidebar() {
         <span className="text-sm font-semibold">Backoffice</span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 p-3">
-        {NAV_ITEMS.map(({ label, to, icon: Icon, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-radius px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )
-            }
-          >
-            <Icon className="size-[18px]" />
-            {label}
-          </NavLink>
+      <nav className="flex flex-1 flex-col gap-4 overflow-y-auto p-3">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={gi} className="flex flex-col gap-1">
+            {group.title && (
+              <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {group.title}
+              </p>
+            )}
+            {group.items.map(({ label, to, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-radius px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )
+                }
+              >
+                <Icon className="size-[18px]" />
+                {label}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 

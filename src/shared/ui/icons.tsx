@@ -118,3 +118,38 @@ export const IconMenu = base(
     <path d="M4 12h16M4 6h16M4 18h16" />
   </>,
 );
+export const IconReceipt = base(
+  <>
+    <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-3-2-2 2-2-2-2 2-2-2-3 2z" />
+    <path d="M9 7h6M9 11h6M9 15h4" />
+  </>,
+);
+export const IconList = base(
+  <>
+    <path d="M8 6h13M8 12h13M8 18h13" />
+    <path d="M3 6h.01M3 12h.01M3 18h.01" />
+  </>,
+);
+export const IconCoin = base(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M14.5 9a2.5 2 0 0 0-2.5-1.5c-1.5 0-2.5.8-2.5 2s1 1.6 2.5 2 2.5 1 2.5 2-1 2-2.5 2a2.5 2 0 0 1-2.5-1.5" />
+    <path d="M12 6v1.5M12 16.5V18" />
+  </>,
+);
+export const IconBuilding = base(
+  <>
+    <path d="M3 21h18" />
+    <path d="M5 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16" />
+    <path d="M14 9h4a1 1 0 0 1 1 1v11" />
+    <path d="M8 8h2M8 12h2M8 16h2" />
+  </>,
+);
+export const IconSplit = base(
+  <>
+    <path d="M21 3v5h-5" />
+    <path d="M3 21v-5h5" />
+    <path d="M21 8a9 9 0 0 0-9-5 9 9 0 0 0-9 5" />
+    <path d="M3 16a9 9 0 0 0 9 5 9 9 0 0 0 9-5" />
+  </>,
+);

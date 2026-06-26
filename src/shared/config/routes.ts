@@ -11,5 +11,12 @@ export const ROUTES = {
   userDetail: (id: string | number = ":id") => `/users/${id}`,
   products: "/products",
   orders: "/orders",
+  transactions: "/transactions",
+  transactionDetail: (id: string = ":id") => `/transactions/${id}`,
+  // 분할정산
+  sidList: "/settlement/sids",
+  sellerTransactions: "/settlement/transactions",
+  settlementList: "/settlement/list",
+  smeSettlements: "/settlement/sme",
   settings: "/settings",
 } as const;
