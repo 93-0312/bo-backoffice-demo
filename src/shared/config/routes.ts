@@ -16,6 +16,7 @@ export const ROUTES = {
   // 분할정산
   sidList: "/settlement/sids",
   sellerTransactions: "/settlement/transactions",
+  sellerTransactionDetail: (tid: string = ":tid") => `/settlement/transactions/${tid}`,
   settlementList: "/settlement/list",
   smeSettlements: "/settlement/sme",
   settings: "/settings",

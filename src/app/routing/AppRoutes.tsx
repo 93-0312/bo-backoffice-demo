@@ -11,6 +11,7 @@ import { TransactionsPage } from "@/pages/transactions";
 import { TransactionDetailPage } from "@/pages/transaction-detail";
 import { SidListPage } from "@/pages/settlement-sids";
 import { SellerTransactionsPage } from "@/pages/settlement-transactions";
+import { SellerTransactionDetailPage } from "@/pages/settlement-transaction-detail";
 import { SettlementListPage } from "@/pages/settlement-list";
 import { SettingsPage } from "@/pages/settings";
 import { NotFoundPage } from "@/pages/not-found";
@@ -41,6 +42,7 @@ export function AppRoutes() {
         <Route path={ROUTES.transactionDetail()} element={<TransactionDetailPage />} />
         <Route path={ROUTES.sidList} element={<SidListPage />} />
         <Route path={ROUTES.sellerTransactions} element={<SellerTransactionsPage />} />
+        <Route path={ROUTES.sellerTransactionDetail()} element={<SellerTransactionDetailPage />} />
         <Route path={ROUTES.settlementList} element={<SettlementListPage />} />
         <Route path={ROUTES.smeSettlements} element={<SettlementListPage sme />} />
         <Route path={ROUTES.settings} element={<SettingsPage />} />

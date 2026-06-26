@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, Select, Input, Checkbox, Label, type SelectOption } from "@/shared/ui";
 import { useDebouncedValue } from "@/shared/hooks";
 import { formatNumber } from "@/shared/lib";
+import { ROUTES } from "@/shared/config";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
 import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
-import { RefundButton } from "@/features/seller-refund";
 import {
   fetchSellerTransactions,
   SellerTxTypeBadge,
@@ -41,8 +42,8 @@ export function SellerTransactionsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [rows, setRows] = useState<SellerTransaction[] | null>(null);
-  const [version, setVersion] = useState(0);
   const debounced = useDebouncedValue(keyword, 300);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let alive = true;
@@ -53,7 +54,7 @@ export function SellerTransactionsPage() {
     return () => {
       alive = false;
     };
-  }, [debounced, type, state, excludePayverse, version]);
+  }, [debounced, type, state, excludePayverse]);
 
   useEffect(() => setPage(1), [debounced, type, state, excludePayverse, range, pageSize]);
 
@@ -76,11 +77,6 @@ export function SellerTransactionsPage() {
     { header: "거래 상태", cell: (t) => <SellerTxStateBadge state={t.state} /> },
     { header: "통화", cell: (t) => <span className="text-sm">{t.currency}</span> },
     { header: "금액", align: "right", cell: (t) => <span className="text-sm font-medium tabular-nums">{formatNumber(t.amount)}.00</span> },
-    {
-      header: "환불",
-      align: "right",
-      cell: (t) => <RefundButton tid={t.tid} onRefunded={() => setVersion((v) => v + 1)} />,
-    },
   ];
 
   function reset() {
@@ -119,6 +115,7 @@ export function SellerTransactionsPage() {
           rows={paged}
           loading={rows === null}
           getRowKey={(t) => t.id}
+          onRowClick={(t) => navigate(ROUTES.sellerTransactionDetail(t.tid))}
           emptyMessage="조건에 맞는 거래내역이 없습니다."
         />
         <Pagination
