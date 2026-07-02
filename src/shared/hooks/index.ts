@@ -4,7 +4,7 @@
  * "비즈니스 로직"이 들어가면 안 된다(그건 features/entities). 여기 있는 건
  * 어떤 앱에 옮겨 붙여도 그대로 동작하는 UI/유틸 훅뿐이다.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 /** boolean 토글 헬퍼. [value, toggle, set] */
 export function useToggle(initial = false) {
@@ -61,4 +61,28 @@ export function useLocalStorage<T>(key: string, initial: T) {
     }
   }, [key, value]);
   return [value, setValue] as const;
+}
+
+/**
+ * 컨테이너의 렌더 폭을 실측한다 — SVG 차트를 px 단위로 그리면서도
+ * 반응형을 유지하기 위한 훅 (widgets/renewal-* 차트에서 사용).
+ */
+export function useContainerWidth<T extends HTMLElement>(): [RefObject<T>, number] {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    setWidth(el.clientWidth);
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0] && entries[0].contentRect.width;
+      if (w) setWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return [ref, width];
 }

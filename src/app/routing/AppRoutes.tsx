@@ -4,6 +4,7 @@ import { AppLayout } from "@/app/layout/AppLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginPage } from "@/pages/login";
 import { DashboardPage } from "@/pages/dashboard";
+import { DashboardRenewalPage } from "@/pages/dashboard-renewal";
 import { UsersPage } from "@/pages/users";
 import { ProductsPage } from "@/pages/products";
 import { OrdersPage } from "@/pages/orders";
@@ -35,6 +36,7 @@ export function AppRoutes() {
         }
       >
         <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+        <Route path={ROUTES.dashboardRenewal} element={<DashboardRenewalPage />} />
         <Route path={ROUTES.users} element={<UsersPage />} />
         <Route path={ROUTES.products} element={<ProductsPage />} />
         <Route path={ROUTES.orders} element={<OrdersPage />} />

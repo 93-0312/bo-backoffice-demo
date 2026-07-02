@@ -7,6 +7,7 @@
 export const ROUTES = {
   login: "/login",
   dashboard: "/",
+  dashboardRenewal: "/dashboard-renewal",
   users: "/users",
   userDetail: (id: string | number = ":id") => `/users/${id}`,
   products: "/products",
