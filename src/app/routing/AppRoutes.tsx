@@ -35,8 +35,8 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path={ROUTES.dashboard} element={<DashboardPage />} />
-        <Route path={ROUTES.dashboardRenewal} element={<DashboardRenewalPage />} />
+        <Route path={ROUTES.dashboard} element={<DashboardRenewalPage />} />
+        <Route path={ROUTES.dashboardLegacy} element={<DashboardPage />} />
         <Route path={ROUTES.users} element={<UsersPage />} />
         <Route path={ROUTES.products} element={<ProductsPage />} />
         <Route path={ROUTES.orders} element={<OrdersPage />} />

@@ -6,8 +6,10 @@
  */
 export const ROUTES = {
   login: "/login",
+  /** 기본 진입 화면 — 리뉴얼 대시보드 */
   dashboard: "/",
-  dashboardRenewal: "/dashboard-renewal",
+  /** 리뉴얼 이전 대시보드 (교보재 원본) */
+  dashboardLegacy: "/dashboard-legacy",
   users: "/users",
   userDetail: (id: string | number = ":id") => `/users/${id}`,
   products: "/products",

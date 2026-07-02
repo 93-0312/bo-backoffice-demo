@@ -15,7 +15,7 @@ import { PaymentsMethodsCard } from "@/widgets/renewal-payments-methods";
 import { DEFAULT_LAYOUT, type LayoutRow, type WidgetId } from "../model/layout";
 
 /**
- * DashboardRenewalPage — 라우트 `/dashboard-renewal` (page).
+ * DashboardRenewalPage — 라우트 `/` (page, 기본 진입 화면).
  *
  * 리뉴얼 대시보드(Figma "BO_Design_리뉴얼")를 구 BO 에 선적용하는 화면.
  * page 는 데이터 로딩과 벤토 배치만 담당하고, 각 카드의 내부 구현은

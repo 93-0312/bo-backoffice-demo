@@ -35,7 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { label: "대시보드", to: ROUTES.dashboard, icon: IconDashboard, end: true },
-      { label: "대시보드 리뉴얼", to: ROUTES.dashboardRenewal, icon: IconDashboard },
+      { label: "기존 대시보드", to: ROUTES.dashboardLegacy, icon: IconDashboard },
     ],
   },
   {

@@ -5,7 +5,7 @@ import { StatCard } from "@/widgets/stat-card";
 import { RecentOrders } from "@/widgets/recent-orders";
 
 /**
- * DashboardPage — 라우트 `/` (page).
+ * DashboardPage — 라우트 `/dashboard-legacy` (page, 리뉴얼 이전 대시보드).
  *
  * 여러 widget(StatCard·RecentOrders)과 shared(Meter)를 한 화면으로 조립한다.
  * page 는 데이터 표시값을 결정하고 배치만 한다 — KPI 카드/리스트의 내부 구현은 widget 몫.
