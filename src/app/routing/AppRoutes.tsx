@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginPage } from "@/pages/login";
 import { DashboardPage } from "@/pages/dashboard";
 import { DashboardRenewalPage } from "@/pages/dashboard-renewal";
+import { DashboardRenewal2Page } from "@/pages/dashboard-renewal2";
 import { UsersPage } from "@/pages/users";
 import { ProductsPage } from "@/pages/products";
 import { OrdersPage } from "@/pages/orders";
@@ -36,6 +37,7 @@ export function AppRoutes() {
         }
       >
         <Route path={ROUTES.dashboard} element={<DashboardRenewalPage />} />
+        <Route path={ROUTES.dashboardRenewal2} element={<DashboardRenewal2Page />} />
         <Route path={ROUTES.dashboardLegacy} element={<DashboardPage />} />
         <Route path={ROUTES.users} element={<UsersPage />} />
         <Route path={ROUTES.products} element={<ProductsPage />} />

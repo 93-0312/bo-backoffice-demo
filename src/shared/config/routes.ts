@@ -8,6 +8,8 @@ export const ROUTES = {
   login: "/login",
   /** 기본 진입 화면 — 리뉴얼 대시보드 */
   dashboard: "/",
+  /** 리뉴얼 대시보드 A/B 변형 B */
+  dashboardRenewal2: "/dashboard-renewal-2",
   /** 리뉴얼 이전 대시보드 (교보재 원본) */
   dashboardLegacy: "/dashboard-legacy",
   users: "/users",
