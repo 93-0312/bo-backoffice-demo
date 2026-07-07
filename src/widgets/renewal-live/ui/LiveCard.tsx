@@ -73,8 +73,11 @@ export function LiveCard({ title, src, href }: LiveCardProps) {
           title={title}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
-          // 외부 페이지의 top-level 이동(frame busting)을 막는다
-          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+          // top-level 이동(frame busting)만 막고, 로그인 시도는 팝업으로 열리게 허용.
+          // 단, 네이버 로그인 페이지는 X-Frame-Options: SAMEORIGIN 이라 iframe "안"에서는
+          // 절대 안 뜨고, SameSite 쿠키 정책 때문에 로그인해도 iframe 이 세션을 인식하지
+          // 못할 수 있다(브라우저 정책 의존). 확실한 경로는 "새 창에서 보기".
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-presentation"
           referrerPolicy="no-referrer-when-downgrade"
         />
       </Frame>
