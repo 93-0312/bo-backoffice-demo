@@ -9,7 +9,8 @@ export type WidgetId =
   | "target"
   | "topCountries"
   | "notice"
-  | "paymentsMethods";
+  | "paymentsMethods"
+  | "live";
 
 /** 한 행: main = 유동 폭, side = 우측 고정 레일(424px) */
 export interface LayoutRow {
@@ -17,9 +18,10 @@ export interface LayoutRow {
   side?: WidgetId;
 }
 
-/** Figma 기본 프레임(Section-1/2/3) 배치 */
+/** Figma 기본 프레임(Section-1/2/3) 배치 + 라이브 섹션 */
 export const DEFAULT_LAYOUT: LayoutRow[] = [
   { main: "transactionStatus", side: "target" },
   { main: "topCountries", side: "notice" },
   { main: "paymentsMethods" },
+  { main: "live" },
 ];
