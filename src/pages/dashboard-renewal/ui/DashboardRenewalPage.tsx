@@ -12,14 +12,7 @@ import { TargetCard } from "@/widgets/renewal-target";
 import { TopCountriesCard } from "@/widgets/renewal-top-countries";
 import { NoticeCard } from "@/widgets/renewal-notice";
 import { PaymentsMethodsCard } from "@/widgets/renewal-payments-methods";
-import { LiveCard } from "@/widgets/renewal-live";
 import { DEFAULT_LAYOUT, type LayoutRow, type WidgetId } from "../model/layout";
-
-/** 라이브 섹션에 띄울 스트림 (데모용 고정값 — 실서비스는 설정/서버에서 내려줄 값) */
-const LIVE_STREAM = {
-  title: "Sports Live",
-  src: "https://chzzk.naver.com/live/75cbf189b3bb8f9f687d2aca0d0a382b",
-};
 
 /**
  * DashboardRenewalPage — 라우트 `/` (page, 기본 진입 화면).
@@ -28,7 +21,6 @@ const LIVE_STREAM = {
  * page 는 데이터 로딩과 벤토 배치만 담당하고, 각 카드의 내부 구현은
  * widgets/renewal-* 슬라이스 몫이다. 배치는 model/layout 의 행 배열로 제어한다.
  */
-
 const Root = styled.div`
   font-family: ${t.font.family};
   color: ${t.color.textStrong};
@@ -56,11 +48,7 @@ const Row = styled.div<{ $hasSide: boolean }>`
   }
 `;
 
-export function DashboardRenewalPage({
-  layout = DEFAULT_LAYOUT,
-}: {
-  layout?: LayoutRow[];
-}) {
+export function DashboardRenewalPage({ layout = DEFAULT_LAYOUT }: { layout?: LayoutRow[] }) {
   const [data, setData] = useState<DashboardRenewalData | null>(null);
 
   useEffect(() => {
@@ -87,12 +75,7 @@ export function DashboardRenewalPage({
       case "transactionStatus":
         return <TransactionStatusCard data={data.trend} />;
       case "target":
-        return (
-          <TargetCard
-            data={data.target}
-            variant={position === "main" ? "wide" : "side"}
-          />
-        );
+        return <TargetCard data={data.target} variant={position === "main" ? "wide" : "side"} />;
       case "topCountries":
         return (
           <TopCountriesCard
@@ -101,9 +84,7 @@ export function DashboardRenewalPage({
           />
         );
       case "notice":
-        return (
-          <NoticeCard items={data.notices} onItemClick={handleNoticeClick} />
-        );
+        return <NoticeCard items={data.notices} onItemClick={handleNoticeClick} />;
       case "paymentsMethods":
         return (
           <PaymentsMethodsCard
@@ -111,8 +92,6 @@ export function DashboardRenewalPage({
             onDownload={() => handleDownload("paymentsMethods")}
           />
         );
-      case "live":
-        return <LiveCard title={LIVE_STREAM.title} src={LIVE_STREAM.src} />;
       default:
         return null;
     }
