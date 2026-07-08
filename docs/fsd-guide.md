@@ -161,6 +161,48 @@ features/seller-refund/
 
 ---
 
+## Slice Grouping (팀 합의 규칙)
+
+한 도메인이 `list / create / detail / modify`처럼 슬라이스가 여러 개로 갈릴 때, 이들을
+**도메인 이름의 그룹 폴더로 묶는다.** BO는 이 4종 패턴이 많아 도메인별로 클러스터링하면
+탐색·응집이 좋아진다.
+
+```
+pages/
+└─ settlement/              (slice group — 코드 없는 순수 폴더)
+   ├─ list/                 (slice) ui/SettlementListPage.tsx + index.ts
+   ├─ sids/                 (slice)
+   ├─ transactions/         (slice)
+   └─ transaction-detail/   (slice)
+```
+
+**네이밍 규칙(합의):** 그룹이 도메인 맥락을 주므로 **폴더 이름은 접두어를 뗀 동작명**
+(`list`, `create`)으로 짧게. 단 **파일·컴포넌트 이름은 풀네임 유지**
+(`SettlementListPage.tsx`, `export SettlementListPage`) → 전역 검색은 컴포넌트명으로 하니
+안 헷갈린다. (`ListPage.tsx`처럼 파일까지 줄이면 검색이 무너지니 금지.)
+
+**반드시 지킬 가드레일 2개:**
+1. **그룹은 코드 없는 순수 폴더** — `settlement/index.ts`(그룹 Public API)나 그룹 레벨
+   세그먼트를 만들지 않는다. Public API는 각 슬라이스(`settlement/list/index.ts`)에만.
+   그룹에 공통 코드가 생기면 그건 아래 레이어(entities/features/widgets)로 내려야 한다.
+2. **그룹 형제 슬라이스끼리 직접 import 금지** — `settlement/list`가 `settlement/detail`을
+   가져다 쓰면 안 된다(같은 레이어 규칙은 그룹 안에서도 유효). 공유가 필요하면 한 층 아래로.
+   → 보통 그룹이 있으면 그 아래 `entities/settlement`(타입·api·배지)이 짝으로 존재하고,
+   페이지들은 그걸 조립만 한다.
+
+**언제 묶나:** 같은 도메인 슬라이스가 **3개 이상**일 때. 1~2개면 묶지 말 것(빈 껍데기).
+그룹 안에 그룹 중첩은 금지(한 depth). 슬라이스가 많은 `pages`·`features`에서 주로 쓰고,
+`entities`는 보통 flat(`entities/settlement` 하나).
+
+**alias 영향 없음:** `@/pages` → `src/2-pages`는 그대로고 그룹은 그 아래 경로일 뿐이라
+tsconfig/vite 수정이 필요 없다. import만 `@/pages/settlement/list`로 바뀐다.
+
+> 실제 적용 예: 이 레포의 `settlement-list/sids/transactions/transaction-detail` 4개를
+> `pages/settlement/` 그룹으로 묶었다(커밋 참고). 라우트 import만 `@/pages/settlement/*`로
+> 갱신되고 컴포넌트·라우트 경로는 그대로.
+
+---
+
 ## 워크드 예제 (제일 실무적 — 실제 커밋 기반)
 
 ### 예제 1 — "복붙 3번" → shared로 추출한 ConfirmDialog
