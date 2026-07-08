@@ -1,24 +1,14 @@
 import { useState } from "react";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogBody,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Alert,
-  IconTrash,
-} from "@/shared/ui";
+import { Button, ConfirmDialog, IconTrash } from "@/shared/ui";
 import { ApiError } from "@/shared/api";
 import { deleteUser } from "@/entities/user";
 
 /**
  * DeleteUserButton — "사용자 삭제하기" 행위(feature).
  *
- * 위험 동작이라 킷 Dialog(role="alertdialog")로 확인을 거친다. 비동기 진행/에러를 직접
- * 제어하려고 합성형 Dialog 를 쓴다. 삭제 자체는 entities/user.deleteUser 로 위임.
+ * 위험 동작이라 확인을 거친다. 확인창 껍데기는 shared/ui.ConfirmDialog 를 재사용하고,
+ * 이 feature 는 삭제 행위(비동기 진행/에러 제어)만 소유한다. 삭제 자체는
+ * entities/user.deleteUser 로 위임. 성공 시에만 닫으므로 closeOnConfirm={false}.
  */
 export function DeleteUserButton({
   userId,
@@ -56,29 +46,18 @@ export function DeleteUserButton({
         aria-label={`${userName} 삭제`}
         onClick={() => setOpen(true)}
       />
-      <Dialog open={open} onOpenChange={setOpen} role="alertdialog">
-        <DialogContent className="w-full max-w-sm">
-          <DialogHeader>
-            <DialogTitle>사용자 삭제</DialogTitle>
-            <DialogDescription>
-              '{userName}' 님을 삭제할까요? 이 작업은 되돌릴 수 없습니다.
-            </DialogDescription>
-          </DialogHeader>
-          {error && (
-            <DialogBody className="pb-2">
-              <Alert type="error" title={error} />
-            </DialogBody>
-          )}
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
-              취소
-            </Button>
-            <Button variant="destructive" onClick={handleConfirm} disabled={pending}>
-              {pending ? "삭제 중…" : "삭제"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="사용자 삭제"
+        description={`'${userName}' 님을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`}
+        tone="destructive"
+        confirmLabel="삭제"
+        closeOnConfirm={false}
+        loading={pending}
+        error={error}
+        onConfirm={handleConfirm}
+      />
     </>
   );
 }

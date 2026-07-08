@@ -55,6 +55,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
+  ConfirmDialog,
   Toast,
   IconBell,
   IconCheck,
@@ -388,6 +389,7 @@ export function SettingsPage() {
 function OverlayShowcase() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
@@ -405,6 +407,9 @@ function OverlayShowcase() {
         </Button>
         <Button variant="outline" onClick={() => setAlertOpen(true)}>
           AlertDialog 열기
+        </Button>
+        <Button variant="outline" onClick={() => setConfirmOpen(true)}>
+          ConfirmDialog 열기
         </Button>
         <Button variant="outline" onClick={() => setSheetOpen(true)}>
           Sheet 열기(우측)
@@ -450,6 +455,16 @@ function OverlayShowcase() {
         cancelText="취소"
         actionText="삭제"
         onAction={() => setAlertOpen(false)}
+      />
+
+      {/* ConfirmDialog (app-shared: Dialog 껍데기를 감싼 확인창) */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="변경사항을 저장할까요?"
+        description="제목/메시지만 props 로 바꿔 재사용하는 공통 확인창입니다."
+        confirmLabel="저장"
+        onConfirm={() => console.log("[confirm] 저장")}
       />
 
       {/* Sheet (우측 패널) */}

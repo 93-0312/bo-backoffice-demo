@@ -134,4 +134,5 @@ export {
   TableHead,
   TableCell,
 } from "./table";
+export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
 export * from "./icons";
