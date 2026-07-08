@@ -1,0 +1,12 @@
+{
+  "//": "빌드 도구 설정 파일(Node 환경) 전용 tsconfig. 에디터가 vite.config.ts 를 이 설정으로 검사해 node:url 등 Node 타입을 인식한다. 앱 코드(tsconfig.json)와 분리해 브라우저 코드에 Node 전역이 새지 않게 한다.",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["vite.config.ts"]
+}
