@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { t } from "@/shared/ui/renewal";
-import { fetchDashboardRenewal, type DashboardRenewalData } from "@/entities/dashboard-renewal";
+import {
+  fetchDashboardRenewal,
+  type DashboardRenewalData,
+} from "@/entities/dashboard-renewal";
 import { TopInfoBar } from "@/widgets/renewal-top-info";
 import { TransactionStatusCard } from "@/widgets/renewal-transaction-status";
 import { TargetCard } from "@/widgets/renewal-target";
@@ -78,7 +81,11 @@ const Row = styled.div<{ $hasSide: boolean }>`
   }
 `;
 
-export function DashboardRenewal2Page({ variant: initialVariant = "B" }: { variant?: Variant }) {
+export function DashboardRenewal2Page({
+  variant: initialVariant = "B",
+}: {
+  variant?: Variant;
+}) {
   const [data, setData] = useState<DashboardRenewalData | null>(null);
   const [variant, setVariant] = useState<Variant>(initialVariant);
 
@@ -99,7 +106,12 @@ export function DashboardRenewal2Page({ variant: initialVariant = "B" }: { varia
       case "transactionStatus":
         return <TransactionStatusCard data={data.trend} />;
       case "target":
-        return <TargetCard data={data.target} variant={position === "main" ? "wide" : "side"} />;
+        return (
+          <TargetCard
+            data={data.target}
+            variant={position === "main" ? "wide" : "side"}
+          />
+        );
       case "topCountries":
         return <TopCountriesCard data={data.topCountries} />;
       case "notice":
