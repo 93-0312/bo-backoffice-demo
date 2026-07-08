@@ -11,10 +11,10 @@ import { ProductsPage } from "@/pages/products";
 import { OrdersPage } from "@/pages/orders";
 import { TransactionsPage } from "@/pages/transactions";
 import { TransactionDetailPage } from "@/pages/transaction-detail";
-import { SidListPage } from "@/pages/settlement-sids";
-import { SellerTransactionsPage } from "@/pages/settlement-transactions";
-import { SellerTransactionDetailPage } from "@/pages/settlement-transaction-detail";
-import { SettlementListPage } from "@/pages/settlement-list";
+import { SidListPage } from "@/pages/settlement/sids";
+import { SellerTransactionsPage } from "@/pages/settlement/transactions";
+import { SellerTransactionDetailPage } from "@/pages/settlement/transaction-detail";
+import { SettlementListPage } from "@/pages/settlement/list";
 import { SettingsPage } from "@/pages/settings";
 import { NotFoundPage } from "@/pages/not-found";
 

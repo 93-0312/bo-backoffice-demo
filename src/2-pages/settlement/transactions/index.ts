@@ -1,2 +1,2 @@
-/** pages/settlement-transactions Public API. */
+/** pages/settlement/transactions Public API. */
 export { SellerTransactionsPage } from "./ui/SellerTransactionsPage";
