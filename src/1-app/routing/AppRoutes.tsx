@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { ROUTES } from "@/shared/config";
 import { AppLayout } from "@/app/layout/AppLayout";
+import { PopupLayout } from "@/app/layout/PopupLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginPage } from "@/pages/login";
 import { DashboardPage } from "@/pages/dashboard";
@@ -47,7 +48,6 @@ export function AppRoutes() {
         <Route path={ROUTES.transactions} element={<TransactionsPage />} />
         <Route path={ROUTES.transactionDetail()} element={<TransactionDetailPage />} />
         <Route path={ROUTES.pgTransactions} element={<PgTransactionsPage />} />
-        <Route path={ROUTES.pgTransactionDetail()} element={<PgTransactionDetailPage />} />
         <Route path={ROUTES.sidList} element={<SidListPage />} />
         <Route path={ROUTES.sellerTransactions} element={<SellerTransactionsPage />} />
         <Route path={ROUTES.sellerTransactionDetail()} element={<SellerTransactionDetailPage />} />
@@ -55,6 +55,17 @@ export function AppRoutes() {
         <Route path={ROUTES.smeSettlements} element={<SettlementListPage sme />} />
         <Route path={ROUTES.settings} element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
+      </Route>
+
+      {/* 팝업(새 창) 전용 — 사이드바·헤더 없이 본문만. 인증 가드는 동일 적용. */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <PopupLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path={ROUTES.pgTransactionDetail()} element={<PgTransactionDetailPage />} />
       </Route>
     </Routes>
   );
