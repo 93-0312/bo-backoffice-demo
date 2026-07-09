@@ -1,22 +1,62 @@
-import { delay } from "@/shared/api";
+import { delay, hasBoSession, boJson } from "@/shared/api";
 import { PG_TRANSACTION_SEED } from "../model/mock";
 import type { PgTransactionListParams, PgTransactionListResponse } from "../model/types";
 
 /**
  * PG 거래내역 조회 (entities/pg-transaction/api).
  *
- * 실제 엔드포인트 (구 BO):
- *   POST https://bo-dev.payverseglobal.com/admin/transaction/listData
- *   body: { startDate, endDate, type, result, schemeCd, search, page, rows, locale, ... }
+ * 실 엔드포인트: POST /bo-api/admin/transaction/listData (Vite 프록시 → dev 호스트).
  *
- * 데모는 외부 dev API(CORS·인증) 대신 시드로 동일 계약(요청 파라미터/응답 봉투)을 흉내낸다.
- * 실서버 연결 시 이 함수 내부만 아래로 교체하면 된다(계약이 같으므로 상위 코드 무변경):
- *   const res = await fetch(URL, { method: "POST", headers, body: JSON.stringify(params) });
- *   return res.json();
+ * 토글: 실 BO 세션(Bearer 토큰)이 있으면 실서버, 없으면 mock.
+ * → 기본(둘러보기/오프라인/CI)은 mock 으로 self-contained 유지, 로그인 시에만 실데이터.
  */
 export async function fetchPgTransactions(
   params: PgTransactionListParams,
 ): Promise<PgTransactionListResponse> {
+  return hasBoSession() ? fetchReal(params) : fetchMock(params);
+}
+
+/** 실서버 조회 — 구 BO listData 요청 body 계약을 그대로 채워 보낸다. */
+async function fetchReal(params: PgTransactionListParams): Promise<PgTransactionListResponse> {
+  const { start, end } = todayRange();
+  const body = {
+    allTime: false,
+    startDate: params.startDate ?? start,
+    endDate: params.endDate ?? end,
+    contractDataCode: "",
+    branchDataCode: "",
+    type: params.type ?? "",
+    result: params.result ?? "",
+    schemeCd: params.schemeCd ?? "",
+    environmentType: "",
+    partnerCd: "",
+    currencyCode: "",
+    filter: "",
+    search: params.search ?? "",
+    timeZone: "9",
+    excludePayverse: false,
+    excludePaypalReferral: false,
+    page: params.page,
+    rows: params.rows,
+    locale: params.locale ?? "ko",
+  };
+  return boJson<PgTransactionListResponse>("/admin/transaction/listData", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** 오늘 00:00:00 ~ 23:59:59 (실서버 기본 조회 범위) */
+function todayRange(): { start: string; end: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return { start: `${y}-${m}-${d} 00:00:00`, end: `${y}-${m}-${d} 23:59:59` };
+}
+
+/** mock 조회 — 시드에 검색·상태·유형 필터 + 페이지네이션을 적용해 동일 계약으로 반환. */
+async function fetchMock(params: PgTransactionListParams): Promise<PgTransactionListResponse> {
   const { search = "", result = "", schemeCd = "", type = "", page, rows } = params;
   const q = search.trim().toLowerCase();
 

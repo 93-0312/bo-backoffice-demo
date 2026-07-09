@@ -1,50 +1,135 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useLocalStorage } from "@/shared/hooks";
-import { mockMutation, ApiError } from "@/shared/api";
+import { ApiError, boRequest, boJson, boSession, extractBearerToken } from "@/shared/api";
 import type { UserRole } from "@/entities/user";
 
 /**
  * 인증 상태/액션 (features/auth/model).
  *
- * "로그인하기"는 사용자 행위 → feature. 로그인된 사용자의 표현 타입(역할 등)은
- * 도메인이므로 entities/user 의 타입을 가져다 쓴다(feature → entities, 정방향 import).
+ * 앱 진입 게이트. 두 가지 로그인 경로를 제공한다:
+ *  1) 실 BO 로그인 — 아이디/비번 → OTP(2FA) → Bearer 토큰. 실서버 데이터 접근용.
+ *  2) 둘러보기(데모) — 로그인 없이 mock 으로 앱을 여는 우회로(오프라인·교보재·CI 용).
  *
- * 데모 계정: admin@example.com / admin1234
+ * "로그인하기"는 사용자 행위 → feature. 표현 타입(역할)은 도메인이라 entities/user 참조.
  */
 export interface AuthUser {
   name: string;
-  email: string;
-  role: UserRole;
+  email: string; // 데모: 이메일 / BO: loginId(표시용)
+  role?: UserRole;
+  userType?: string;
+  loginId?: string;
+  mode: "bo" | "demo";
 }
 
-const DEMO_USER: AuthUser = { name: "김하늘", email: "admin@example.com", role: "admin" };
+const DEMO_USER: AuthUser = {
+  name: "둘러보기",
+  email: "demo@local",
+  role: "admin",
+  mode: "demo",
+};
 
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  mode: "bo" | "demo" | null;
+  /** 1단계: 자격 검증 + 로그인 → OTP QR 반환(있으면) */
+  requestOtp: (loginId: string, password: string) => Promise<{ otpUrl?: string }>;
+  /** 2단계: OTP 검증 → 토큰 저장 + 로그인 완료 */
+  verifyOtp: (loginId: string, otpKey: string) => Promise<void>;
+  /** 로그인 없이 데모(mock)로 진입 */
+  enterDemo: () => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+interface LoginQrResponse {
+  otpUrl?: string;
+  authStatus?: number;
+}
+interface OtpLoginResponse {
+  loginNm?: string;
+  loginId?: string;
+  userType?: string;
+  referenceId?: string;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useLocalStorage<AuthUser | null>("bo-auth-user", null);
+  const [storedUser, setUser] = useLocalStorage<AuthUser | null>("bo-auth-user", null);
+
+  // BO 모드인데 세션 토큰이 없으면(탭 종료 등) 만료로 간주해 로그아웃 상태로 취급한다.
+  const user = storedUser && storedUser.mode === "bo" && !boSession.get() ? null : storedUser;
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: user !== null,
-      async login(email, password) {
-        // 데모 인증: 고정 자격증명만 통과. 실패도 흉내 낸다.
-        if (email.trim().toLowerCase() !== DEMO_USER.email || password !== "admin1234") {
-          await mockMutation(null, { ms: 500 });
-          throw new ApiError("이메일 또는 비밀번호가 올바르지 않습니다.", 401);
+      mode: user?.mode ?? null,
+
+      async requestOtp(loginId, password) {
+        // 1) 자격 검증 (성공 204)
+        const validRes = await boRequest("/login/valid", {
+          method: "POST",
+          body: JSON.stringify({ loginId, loginPw: password, lang: "ko" }),
+        });
+        if (!validRes.ok) {
+          let msg = "아이디 또는 비밀번호가 올바르지 않습니다.";
+          try {
+            const b = (await validRes.json()) as { message?: string };
+            if (b?.message) msg = b.message;
+          } catch {
+            /* no body */
+          }
+          throw new ApiError(msg, validRes.status);
         }
-        await mockMutation(null, { ms: 600 });
+        // 2) 로그인 → OTP QR
+        const login = await boJson<LoginQrResponse>("/login", {
+          method: "POST",
+          body: JSON.stringify({ loginId, loginPw: password, lang: "ko" }),
+        });
+        return { otpUrl: login?.otpUrl };
+      },
+
+      async verifyOtp(loginId, otpKey) {
+        const res = await boRequest("/otpLogin", {
+          method: "POST",
+          body: JSON.stringify({ loginId, otpKey }),
+        });
+        if (!res.ok) {
+          let msg = "OTP 인증에 실패했습니다.";
+          try {
+            const b = (await res.json()) as { message?: string };
+            if (b?.message) msg = b.message;
+          } catch {
+            /* no body */
+          }
+          throw new ApiError(msg, res.status);
+        }
+        const body = (await res.json().catch(() => ({}))) as OtpLoginResponse;
+        const token = extractBearerToken(res, body);
+        if (!token) {
+          throw new ApiError(
+            "로그인은 됐지만 응답에서 토큰을 찾지 못했습니다. 개발자도구 Network 에서 otpLogin 응답의 토큰 위치(헤더명)를 확인해 알려주세요.",
+            500,
+          );
+        }
+        boSession.set(token);
+        setUser({
+          name: body.loginNm ?? loginId,
+          email: body.loginId ?? loginId,
+          loginId: body.loginId ?? loginId,
+          userType: body.userType,
+          mode: "bo",
+        });
+      },
+
+      enterDemo() {
+        boSession.clear();
         setUser(DEMO_USER);
       },
+
       logout() {
+        boSession.clear();
         setUser(null);
       },
     }),

@@ -23,7 +23,19 @@ export default defineConfig({
       { find: "@", replacement: r("./src") },
     ],
   },
-  server: { port: 5180 },
+  server: {
+    port: 5180,
+    // 실 BO(dev) 프록시 — 브라우저 CORS 우회용. `/bo-api/*` → dev 호스트.
+    // 데모 기본은 mock 이므로 이 프록시는 "실서버 모드"에서만 실제로 쓰인다.
+    proxy: {
+      "/bo-api": {
+        target: "https://bo-dev.payverseglobal.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (p) => p.replace(/^\/bo-api/, ""),
+      },
+    },
+  },
   test: {
     globals: true,
     environment: "jsdom",
