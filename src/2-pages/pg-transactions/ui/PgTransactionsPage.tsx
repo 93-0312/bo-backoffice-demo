@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Card, Input, Select, IconSearch, type SelectOption } from "@/shared/ui";
+import {
+  Button,
+  Card,
+  Input,
+  Select,
+  IconSearch,
+  type SelectOption,
+} from "@/shared/ui";
 import { formatNumber } from "@/shared/lib";
 import { ROUTES } from "@/shared/config";
 import { useDebouncedValue } from "@/shared/hooks";
@@ -30,6 +37,8 @@ const STATUS_OPTIONS: SelectOption[] = [
 const columns: Column<PgTransaction>[] = [
   {
     header: "거래번호",
+    fixed: "left",
+    width: 200,
     cell: (t) => (
       // 거래번호 클릭 → 상세를 새 "창"(팝업)으로 오픈 (구 BO 동작 재현: window.open _blank)
       <button
@@ -48,7 +57,10 @@ const columns: Column<PgTransaction>[] = [
       </button>
     ),
   },
-  { header: "거래일시", cell: (t) => <span className="text-sm">{t.transactDate}</span> },
+  {
+    header: "거래일시",
+    cell: (t) => <span className="text-sm">{t.transactDate}</span>,
+  },
   {
     header: "가맹점",
     cell: (t) => (
@@ -62,9 +74,18 @@ const columns: Column<PgTransaction>[] = [
     header: "주문번호",
     cell: (t) => <span className="font-mono text-xs">{t.transactOrderId}</span>,
   },
-  { header: "유형", cell: (t) => <span className="text-sm">{t.transactTypeName}</span> },
-  { header: "결제수단", cell: (t) => <span className="text-sm">{t.transactSchemeName}</span> },
-  { header: "결제 방식", cell: (t) => <span className="text-sm">{t.methodDisplayName}</span> },
+  {
+    header: "유형",
+    cell: (t) => <span className="text-sm">{t.transactTypeName}</span>,
+  },
+  {
+    header: "결제수단",
+    cell: (t) => <span className="text-sm">{t.transactSchemeName}</span>,
+  },
+  {
+    header: "결제 방식",
+    cell: (t) => <span className="text-sm">{t.methodDisplayName}</span>,
+  },
   {
     header: "금액",
     align: "right",
@@ -83,18 +104,23 @@ const columns: Column<PgTransaction>[] = [
     cell: (t) => (
       <span className="text-sm">
         {t.transCountryNm}
-        <span className="ml-1 text-xs text-muted-foreground">({t.transCountryCd})</span>
+        <span className="ml-1 text-xs text-muted-foreground">
+          ({t.transCountryCd})
+        </span>
       </span>
     ),
   },
   {
     header: "카드번호",
     cell: (t) => (
-      <span className="font-mono text-xs text-muted-foreground">{t.transactCardNo || "-"}</span>
+      <span className="font-mono text-xs text-muted-foreground">
+        {t.transactCardNo || "-"}
+      </span>
     ),
   },
   {
     header: "고객 ID",
+    width: 140,
     cell: (t) => <span className="font-mono text-xs">{t.customerId}</span>,
   },
 ];
@@ -104,13 +130,19 @@ export function PgTransactionsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selected, setSelected] = useState<string[]>([]);
 
   const debouncedSearch = useDebouncedValue(search, 300);
 
-  // 검색/상태/페이지 크기 변경 시 첫 페이지로
+  // 검색/상태/페이지 크기 변경 시 첫 페이지로 + 선택 초기화(다른 조회 결과이므로)
   useEffect(() => {
     setPage(1);
+    setSelected([]);
   }, [debouncedSearch, status, pageSize]);
+
+  useEffect(() => {
+    // setSelected([]);
+  }, [page]);
 
   // 데이터 로딩/캐싱/재조회는 TanStack Query 가 담당 (파라미터 변경 시 자동 재조회).
   const { data, isLoading } = usePgTransactionsQuery({
@@ -147,12 +179,39 @@ export function PgTransactionsPage() {
           />
         </div>
 
+        {selected.length > 0 && (
+          <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2">
+            <span className="text-sm text-muted-foreground">
+              {selected.length}건 선택됨
+            </span>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setSelected([])}>
+                선택 해제
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  alert(`${selected.length}건 일괄 처리 (데모)`);
+                  console.log(selected, "selected");
+                }}
+              >
+                일괄 처리
+              </Button>
+            </div>
+          </div>
+        )}
+
         <DataTable
           columns={columns}
           rows={rows}
           loading={isLoading}
           getRowKey={(t) => t.transactId}
           emptyMessage="거래내역이 없습니다."
+          selectable
+          selectedKeys={selected}
+          onSelectionChange={setSelected}
+          stickyHeader
+          maxHeight={520}
         />
 
         <Pagination

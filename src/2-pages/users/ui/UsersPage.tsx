@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/shared/ui";
 import { useDebouncedValue } from "@/shared/hooks";
 import { formatRelativeTime } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
-import { DataTable, type Column } from "@/widgets/data-table";
+import { DataTable, applySort, type Column, type SortState } from "@/widgets/data-table";
 import { UserFilterBar } from "@/features/user-filter";
 import { CreateUserButton } from "@/features/user-create";
 import { DeleteUserButton } from "@/features/user-delete";
@@ -26,6 +26,7 @@ import {
  */
 export function UsersPage() {
   const [params, setParams] = useState<UserListParams>({ search: "", role: "all", status: "all" });
+  const [sort, setSort] = useState<SortState | null>(null);
   const debouncedSearch = useDebouncedValue(params.search ?? "", 300);
 
   const { data, isLoading, refetch } = useUsersQuery({ ...params, search: debouncedSearch });
@@ -34,7 +35,12 @@ export function UsersPage() {
   const load = () => void refetch();
 
   const columns: Column<User>[] = [
-    { header: "사용자", cell: (u) => <UserIdentityCell user={u} /> },
+    {
+      header: "사용자",
+      cell: (u) => <UserIdentityCell user={u} />,
+      sortKey: "name",
+      sortAccessor: (u) => u.name,
+    },
     { header: "역할", cell: (u) => <UserRoleBadge role={u.role} /> },
     { header: "상태", cell: (u) => <UserStatusBadge status={u.status} /> },
     {
@@ -45,6 +51,9 @@ export function UsersPage() {
         ) : (
           <span className="text-sm text-muted-foreground">미접속</span>
         ),
+      sortKey: "lastActiveAt",
+      // 미접속(undefined)은 applySort 규칙상 항상 뒤로 정렬된다.
+      sortAccessor: (u) => u.lastActiveAt,
     },
     {
       header: "",
@@ -52,6 +61,8 @@ export function UsersPage() {
       cell: (u) => <DeleteUserButton userId={u.id} userName={u.name} onDeleted={load} />,
     },
   ];
+
+  const sortedUsers = useMemo(() => applySort(users, sort, columns), [users, sort]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,10 +77,12 @@ export function UsersPage() {
         </div>
         <DataTable
           columns={columns}
-          rows={users}
+          rows={sortedUsers}
           loading={isLoading}
           getRowKey={(u) => u.id}
           emptyMessage="조건에 맞는 사용자가 없습니다."
+          sort={sort}
+          onSortChange={setSort}
         />
       </Card>
     </div>

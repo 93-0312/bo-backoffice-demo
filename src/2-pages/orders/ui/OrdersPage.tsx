@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, Tabs, TabsList, TabsTrigger } from "@/shared/ui";
 import { formatCurrency, formatDateTime } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
-import { DataTable, type Column } from "@/widgets/data-table";
+import { DataTable, applySort, type Column, type SortState } from "@/widgets/data-table";
 import { OrderStatusUpdater } from "@/features/order-status-update";
 import {
   useOrdersQuery,
@@ -29,6 +29,7 @@ const STATUS_TABS: (OrderStatus | "all")[] = [
 
 export function OrdersPage() {
   const [status, setStatus] = useState<OrderStatus | "all">("all");
+  const [sort, setSort] = useState<SortState | null>(null);
 
   const { data, isLoading, refetch } = useOrdersQuery(status);
   const orders: Order[] = data ?? [];
@@ -45,10 +46,29 @@ export function OrdersPage() {
           <p className="truncate text-xs text-muted-foreground">{formatDateTime(o.createdAt)}</p>
         </div>
       ),
+      sortKey: "createdAt",
+      sortAccessor: (o) => o.createdAt,
     },
-    { header: "고객", cell: (o) => <span className="text-sm">{o.customerName}</span> },
-    { header: "수량", align: "right", cell: (o) => <span className="text-sm tabular-nums">{o.itemCount}개</span> },
-    { header: "금액", align: "right", cell: (o) => <span className="text-sm font-medium tabular-nums">{formatCurrency(o.total)}</span> },
+    {
+      header: "고객",
+      cell: (o) => <span className="text-sm">{o.customerName}</span>,
+      sortKey: "customerName",
+      sortAccessor: (o) => o.customerName,
+    },
+    {
+      header: "수량",
+      align: "right",
+      cell: (o) => <span className="text-sm tabular-nums">{o.itemCount}개</span>,
+      sortKey: "itemCount",
+      sortAccessor: (o) => o.itemCount,
+    },
+    {
+      header: "금액",
+      align: "right",
+      cell: (o) => <span className="text-sm font-medium tabular-nums">{formatCurrency(o.total)}</span>,
+      sortKey: "total",
+      sortAccessor: (o) => o.total,
+    },
     { header: "상태", cell: (o) => <OrderStatusBadge status={o.status} /> },
     {
       header: "변경",
@@ -56,6 +76,8 @@ export function OrdersPage() {
       cell: (o) => <OrderStatusUpdater order={o} onUpdated={applyUpdate} />,
     },
   ];
+
+  const sortedOrders = useMemo(() => applySort(orders, sort, columns), [orders, sort]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,10 +98,12 @@ export function OrdersPage() {
         </Tabs>
         <DataTable
           columns={columns}
-          rows={orders}
+          rows={sortedOrders}
           loading={isLoading}
           getRowKey={(o) => o.id}
           emptyMessage="해당 상태의 주문이 없습니다."
+          sort={sort}
+          onSortChange={setSort}
         />
       </Card>
     </div>

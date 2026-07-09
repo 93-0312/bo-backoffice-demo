@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, Input, Select, IconSearch, type SelectOption } from "@/shared/ui";
 import { useDebouncedValue } from "@/shared/hooks";
 import { formatCurrency } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
-import { DataTable, type Column } from "@/widgets/data-table";
+import { DataTable, applySort, type Column, type SortState } from "@/widgets/data-table";
 import {
   useProductsQuery,
   ProductStatusBadge,
@@ -28,6 +28,7 @@ const CATEGORY_OPTIONS: SelectOption[] = [
 export function ProductsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ProductCategory | "all">("all");
+  const [sort, setSort] = useState<SortState | null>(null);
   const debounced = useDebouncedValue(search, 300);
 
   const { data, isLoading } = useProductsQuery({ search: debounced, category });
@@ -42,15 +43,31 @@ export function ProductsPage() {
           <p className="truncate text-xs text-muted-foreground">{p.sku}</p>
         </div>
       ),
+      sortKey: "name",
+      sortAccessor: (p) => p.name,
     },
     {
       header: "카테고리",
       cell: (p) => <span className="text-sm">{PRODUCT_CATEGORY_LABEL[p.category]}</span>,
     },
-    { header: "가격", align: "right", cell: (p) => <span className="text-sm font-medium tabular-nums">{formatCurrency(p.price)}</span> },
-    { header: "재고", align: "right", cell: (p) => <StockIndicator stock={p.stock} /> },
+    {
+      header: "가격",
+      align: "right",
+      cell: (p) => <span className="text-sm font-medium tabular-nums">{formatCurrency(p.price)}</span>,
+      sortKey: "price",
+      sortAccessor: (p) => p.price,
+    },
+    {
+      header: "재고",
+      align: "right",
+      cell: (p) => <StockIndicator stock={p.stock} />,
+      sortKey: "stock",
+      sortAccessor: (p) => p.stock,
+    },
     { header: "상태", cell: (p) => <ProductStatusBadge status={p.status} /> },
   ];
+
+  const sortedProducts = useMemo(() => applySort(products, sort, columns), [products, sort]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,10 +90,12 @@ export function ProductsPage() {
         </div>
         <DataTable
           columns={columns}
-          rows={products}
+          rows={sortedProducts}
           loading={isLoading}
           getRowKey={(p) => p.id}
           emptyMessage="조건에 맞는 상품이 없습니다."
+          sort={sort}
+          onSortChange={setSort}
         />
       </Card>
     </div>

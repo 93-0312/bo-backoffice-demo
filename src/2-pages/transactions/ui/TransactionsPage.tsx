@@ -1,9 +1,10 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/shared/ui";
 import { ROUTES } from "@/shared/config";
 import { formatCurrency } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
-import { DataTable, type Column } from "@/widgets/data-table";
+import { DataTable, applySort, type Column, type SortState } from "@/widgets/data-table";
 import {
   useTransactionsQuery,
   TransactionResultBadge,
@@ -20,12 +21,19 @@ export function TransactionsPage() {
   const { data, isLoading } = useTransactionsQuery();
   const rows: Transaction[] = data ?? [];
 
+  const [sort, setSort] = useState<SortState | null>(null);
+
   const columns: Column<Transaction>[] = [
     {
       header: "거래번호 (TID)",
       cell: (t) => <span className="font-mono text-sm text-primary">{t.tid}</span>,
     },
-    { header: "거래일시", cell: (t) => <span className="text-sm">{t.transactedAt}</span> },
+    {
+      header: "거래일시",
+      cell: (t) => <span className="text-sm">{t.transactedAt}</span>,
+      sortKey: "transactedAt",
+      sortAccessor: (t) => t.transactedAt,
+    },
     { header: "MID명", cell: (t) => <span className="text-sm">{t.midName}</span> },
     {
       header: "결제유형",
@@ -40,8 +48,12 @@ export function TransactionsPage() {
           {formatCurrency(t.amount)} {t.currency}
         </span>
       ),
+      sortKey: "amount",
+      sortAccessor: (t) => t.amount,
     },
   ];
+
+  const sortedRows = useMemo(() => applySort(rows, sort, columns), [rows, sort]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,11 +61,13 @@ export function TransactionsPage() {
       <Card>
         <DataTable
           columns={columns}
-          rows={rows}
+          rows={sortedRows}
           loading={isLoading}
           getRowKey={(t) => t.id}
           onRowClick={(t) => navigate(ROUTES.transactionDetail(t.id))}
           emptyMessage="거래가 없습니다."
+          sort={sort}
+          onSortChange={setSort}
         />
       </Card>
     </div>

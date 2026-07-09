@@ -7,9 +7,23 @@ import { cn } from "@/shared/lib";
  * 스타일만 입힌 얇은 래퍼다. "어떤 컬럼/데이터를 그릴지"(도메인) 는 모른다 —
  * 그건 widgets/data-table(범용 조립) 또는 각 page 가 결정한다.
  */
-export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="w-full overflow-x-auto">
+type TableProps = HTMLAttributes<HTMLTableElement> & {
+  /** 세로 스크롤 상한. 지정하면 래퍼가 overflow-y-auto + maxHeight 를 갖는다(sticky 헤더 전제). */
+  maxHeight?: number | string;
+  /** 스크롤 래퍼(div)에 붙일 추가 class */
+  containerClassName?: string;
+};
+
+export const Table = forwardRef<HTMLTableElement, TableProps>(
+  ({ className, maxHeight, containerClassName, ...props }, ref) => (
+    <div
+      className={cn(
+        "w-full overflow-x-auto",
+        maxHeight != null && "overflow-y-auto",
+        containerClassName,
+      )}
+      style={maxHeight != null ? { maxHeight } : undefined}
+    >
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
     </div>
   ),
