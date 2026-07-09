@@ -13,6 +13,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.2",
     "@types/styled-components": "^5.1.36",
     "bo-ui-kit": "^0.2.2",
     "react": "^18.3.1",

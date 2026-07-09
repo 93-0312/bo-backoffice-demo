@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, Input, Select, IconSearch, type SelectOption } from "@/shared/ui";
 import { formatNumber } from "@/shared/lib";
 import { ROUTES } from "@/shared/config";
@@ -7,7 +7,7 @@ import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
 import {
-  fetchPgTransactions,
+  usePgTransactionsQuery,
   PgTransactionStatusBadge,
   type PgTransaction,
 } from "@/entities/pg-transaction";
@@ -100,9 +100,6 @@ const columns: Column<PgTransaction>[] = [
 ];
 
 export function PgTransactionsPage() {
-  const [rows, setRows] = useState<PgTransaction[] | null>(null);
-  const [total, setTotal] = useState(0);
-
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -115,33 +112,23 @@ export function PgTransactionsPage() {
     setPage(1);
   }, [debouncedSearch, status, pageSize]);
 
-  useEffect(() => {
-    let alive = true;
-    setRows(null);
-    fetchPgTransactions({
-      search: debouncedSearch,
-      result: status,
-      page,
-      rows: pageSize,
-      locale: "ko",
-    }).then((res) => {
-      if (!alive) return;
-      setRows(res.list);
-      setTotal(res.count);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [debouncedSearch, status, page, pageSize]);
-
-  const description = useMemo(
-    () => "구 BO 거래내역 API(/admin/transaction/listData) 계약으로 조회하는 목록입니다.",
-    [],
-  );
+  // 데이터 로딩/캐싱/재조회는 TanStack Query 가 담당 (파라미터 변경 시 자동 재조회).
+  const { data, isLoading } = usePgTransactionsQuery({
+    search: debouncedSearch,
+    result: status,
+    page,
+    rows: pageSize,
+    locale: "ko",
+  });
+  const rows: PgTransaction[] = data?.list ?? [];
+  const total = data?.count ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="거래내역" description={description} />
+      <PageHeader
+        title="거래내역"
+        description="구 BO 거래내역 API(/admin/transaction/listData) 계약으로 조회하는 목록입니다."
+      />
 
       <Card>
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
@@ -162,8 +149,8 @@ export function PgTransactionsPage() {
 
         <DataTable
           columns={columns}
-          rows={rows ?? []}
-          loading={rows === null}
+          rows={rows}
+          loading={isLoading}
           getRowKey={(t) => t.transactId}
           emptyMessage="거래내역이 없습니다."
         />

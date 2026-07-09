@@ -11,4 +11,9 @@ export type {
   ApiEnvelope,
 } from "./model/types";
 export { fetchPgTransactions, fetchPgTransactionDetail } from "./api/pgTransactionApi";
+export {
+  pgTransactionKeys,
+  usePgTransactionsQuery,
+  usePgTransactionDetailQuery,
+} from "./api/queries";
 export { PgTransactionStatusBadge } from "./ui/PgTransactionStatusBadge";

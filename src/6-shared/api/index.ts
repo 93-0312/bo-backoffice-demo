@@ -7,3 +7,4 @@ export {
   boJson,
   extractBearerToken,
 } from "./boClient";
+export { queryClient } from "./queryClient";

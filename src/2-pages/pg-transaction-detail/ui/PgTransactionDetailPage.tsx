@@ -1,12 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { Card, Button, Skeleton } from "@/shared/ui";
 import { formatNumber } from "@/shared/lib";
 import { Descriptions, type DescriptionItem } from "@/widgets/descriptions";
 import {
-  fetchPgTransactionDetail,
+  usePgTransactionDetailQuery,
   PgTransactionStatusBadge,
-  type PgTransactionDetailResponse,
   type PgTransactionGroupItem,
 } from "@/entities/pg-transaction";
 
@@ -56,23 +55,9 @@ const HEADER_COLS: { header: string; cell: (g: PgTransactionGroupItem) => ReactN
 
 export function PgTransactionDetailPage() {
   const { tid = "" } = useParams();
-  const [res, setRes] = useState<PgTransactionDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: res, isLoading } = usePgTransactionDetailQuery(tid);
 
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    fetchPgTransactionDetail(tid).then((r) => {
-      if (!alive) return;
-      setRes(r);
-      setLoading(false);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [tid]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton className="h-8 w-40" />
