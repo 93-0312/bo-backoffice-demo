@@ -12,6 +12,7 @@ import { OrdersPage } from "@/pages/orders";
 import { TransactionsPage } from "@/pages/transactions";
 import { TransactionDetailPage } from "@/pages/transaction-detail";
 import { PgTransactionsPage } from "@/pages/pg-transactions";
+import { PgTransactionDetailPage } from "@/pages/pg-transaction-detail";
 import { SidListPage } from "@/pages/settlement/sids";
 import { SellerTransactionsPage } from "@/pages/settlement/transactions";
 import { SellerTransactionDetailPage } from "@/pages/settlement/transaction-detail";
@@ -46,6 +47,7 @@ export function AppRoutes() {
         <Route path={ROUTES.transactions} element={<TransactionsPage />} />
         <Route path={ROUTES.transactionDetail()} element={<TransactionDetailPage />} />
         <Route path={ROUTES.pgTransactions} element={<PgTransactionsPage />} />
+        <Route path={ROUTES.pgTransactionDetail()} element={<PgTransactionDetailPage />} />
         <Route path={ROUTES.sidList} element={<SidListPage />} />
         <Route path={ROUTES.sellerTransactions} element={<SellerTransactionsPage />} />
         <Route path={ROUTES.sellerTransactionDetail()} element={<SellerTransactionDetailPage />} />

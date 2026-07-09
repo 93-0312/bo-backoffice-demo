@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, Input, Select, IconSearch, type SelectOption } from "@/shared/ui";
 import { formatNumber } from "@/shared/lib";
+import { ROUTES } from "@/shared/config";
 import { useDebouncedValue } from "@/shared/hooks";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
@@ -29,7 +30,18 @@ const STATUS_OPTIONS: SelectOption[] = [
 const columns: Column<PgTransaction>[] = [
   {
     header: "거래번호",
-    cell: (t) => <span className="font-mono text-xs text-primary">{t.transactId}</span>,
+    cell: (t) => (
+      // 거래번호 클릭 → 상세를 새 창으로 (구 BO 동작 재현)
+      <a
+        href={ROUTES.pgTransactionDetail(t.transactId)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-mono text-xs text-primary underline-offset-2 hover:underline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {t.transactId}
+      </a>
+    ),
   },
   { header: "거래일시", cell: (t) => <span className="text-sm">{t.transactDate}</span> },
   {

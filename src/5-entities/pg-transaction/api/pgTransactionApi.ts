@@ -1,6 +1,10 @@
 import { delay, hasBoSession, boJson } from "@/shared/api";
 import { PG_TRANSACTION_SEED } from "../model/mock";
-import type { PgTransactionListParams, PgTransactionListResponse } from "../model/types";
+import type {
+  PgTransactionDetail,
+  PgTransactionListParams,
+  PgTransactionListResponse,
+} from "../model/types";
 
 /**
  * PG 거래내역 조회 (entities/pg-transaction/api).
@@ -44,6 +48,24 @@ async function fetchReal(params: PgTransactionListParams): Promise<PgTransaction
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+/**
+ * 거래 상세 조회 (entities/pg-transaction/api).
+ *
+ * 값 연동은 이후 단계 — 지금은 상세 화면 레이아웃/필드 구조용. 목록 시드에서 기본 필드만
+ * 채우고, 상세 전용 필드는 빈 값으로 둔다(구조만 표시). 실서버 어댑터는 목록과 동일 패턴으로
+ * 추후 교체(토글).
+ */
+export async function fetchPgTransactionDetail(tid: string): Promise<PgTransactionDetail | null> {
+  const base = PG_TRANSACTION_SEED.find((t) => t.transactId === tid);
+  if (!base) return delay(null, 300);
+  const detail: PgTransactionDetail = {
+    ...base,
+    seq: base.transactId,
+    // 상세 전용 필드는 이후 연동 — 현재는 빈 구조
+  };
+  return delay(detail, 300);
 }
 
 /** 오늘 00:00:00 ~ 23:59:59 (실서버 기본 조회 범위) */

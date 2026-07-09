@@ -20,6 +20,7 @@ export const ROUTES = {
   transactionDetail: (id: string = ":id") => `/transactions/${id}`,
   /** 구 BO 거래내역 API 연동 데모 */
   pgTransactions: "/pg-transactions",
+  pgTransactionDetail: (tid: string = ":tid") => `/pg-transactions/${tid}`,
   // 분할정산
   sidList: "/settlement/sids",
   sellerTransactions: "/settlement/transactions",
