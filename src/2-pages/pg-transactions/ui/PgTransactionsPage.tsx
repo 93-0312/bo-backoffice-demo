@@ -41,17 +41,13 @@ const columns: Column<PgTransaction>[] = [
       </div>
     ),
   },
+  {
+    header: "주문번호",
+    cell: (t) => <span className="font-mono text-xs">{t.transactOrderId}</span>,
+  },
   { header: "유형", cell: (t) => <span className="text-sm">{t.transactTypeName}</span> },
   { header: "결제수단", cell: (t) => <span className="text-sm">{t.transactSchemeName}</span> },
-  {
-    header: "국가",
-    cell: (t) => (
-      <span className="text-sm">
-        {t.transCountryNm}
-        <span className="ml-1 text-xs text-muted-foreground">({t.transCountryCd})</span>
-      </span>
-    ),
-  },
+  { header: "결제 방식", cell: (t) => <span className="text-sm">{t.methodDisplayName}</span> },
   {
     header: "금액",
     align: "right",
@@ -64,6 +60,25 @@ const columns: Column<PgTransaction>[] = [
   {
     header: "상태",
     cell: (t) => <PgTransactionStatusBadge status={t.transactStatusName} />,
+  },
+  {
+    header: "국가",
+    cell: (t) => (
+      <span className="text-sm">
+        {t.transCountryNm}
+        <span className="ml-1 text-xs text-muted-foreground">({t.transCountryCd})</span>
+      </span>
+    ),
+  },
+  {
+    header: "카드번호",
+    cell: (t) => (
+      <span className="font-mono text-xs text-muted-foreground">{t.transactCardNo || "-"}</span>
+    ),
+  },
+  {
+    header: "고객 ID",
+    cell: (t) => <span className="font-mono text-xs">{t.customerId}</span>,
   },
 ];
 
