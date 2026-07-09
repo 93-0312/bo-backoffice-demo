@@ -13,9 +13,8 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-6xl">
-            <Outlet />
-          </div>
+          {/* 본문 폭 제한 없음 — 사이드바를 뺀 나머지 전체를 쓴다(컬럼 많은 표 대응). */}
+          <Outlet />
         </main>
       </div>
     </div>
