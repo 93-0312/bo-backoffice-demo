@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, Tabs, TabsList, TabsTrigger } from "@/shared/ui";
 import { formatCurrency, formatDateTime } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { OrderStatusUpdater } from "@/features/order-status-update";
 import {
-  fetchOrders,
+  useOrdersQuery,
   OrderStatusBadge,
   ORDER_STATUS_LABEL,
   type Order,
@@ -29,27 +29,12 @@ const STATUS_TABS: (OrderStatus | "all")[] = [
 
 export function OrdersPage() {
   const [status, setStatus] = useState<OrderStatus | "all">("all");
-  const [orders, setOrders] = useState<Order[] | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-    setOrders(null);
-    fetchOrders(status).then((d) => alive && setOrders(d));
-    return () => {
-      alive = false;
-    };
-  }, [status]);
+  const { data, isLoading, refetch } = useOrdersQuery(status);
+  const orders: Order[] = data ?? [];
 
-  function applyUpdate(updated: Order) {
-    setOrders((prev) =>
-      prev
-        ? prev
-            // 현재 필터에서 벗어난 상태면 목록에서 제거, 아니면 갱신
-            .map((o) => (o.id === updated.id ? updated : o))
-            .filter((o) => status === "all" || o.status === status)
-        : prev,
-    );
-  }
+  // 상태 변경(feature mutation) 후 서버 기준으로 재조회 (필터에서 벗어난 행 자동 반영)
+  const applyUpdate = () => void refetch();
 
   const columns: Column<Order>[] = [
     {
@@ -91,8 +76,8 @@ export function OrdersPage() {
         </Tabs>
         <DataTable
           columns={columns}
-          rows={orders ?? []}
-          loading={orders === null}
+          rows={orders}
+          loading={isLoading}
           getRowKey={(o) => o.id}
           emptyMessage="해당 상태의 주문이 없습니다."
         />

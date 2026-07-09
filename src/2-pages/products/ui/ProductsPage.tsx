@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, Input, Select, IconSearch, type SelectOption } from "@/shared/ui";
 import { useDebouncedValue } from "@/shared/hooks";
 import { formatCurrency } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import {
-  fetchProducts,
+  useProductsQuery,
   ProductStatusBadge,
   StockIndicator,
   PRODUCT_CATEGORY_LABEL,
@@ -28,17 +28,10 @@ const CATEGORY_OPTIONS: SelectOption[] = [
 export function ProductsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ProductCategory | "all">("all");
-  const [products, setProducts] = useState<Product[] | null>(null);
   const debounced = useDebouncedValue(search, 300);
 
-  useEffect(() => {
-    let alive = true;
-    setProducts(null);
-    fetchProducts({ search: debounced, category }).then((d) => alive && setProducts(d));
-    return () => {
-      alive = false;
-    };
-  }, [debounced, category]);
+  const { data, isLoading } = useProductsQuery({ search: debounced, category });
+  const products = data ?? [];
 
   const columns: Column<Product>[] = [
     {
@@ -80,8 +73,8 @@ export function ProductsPage() {
         </div>
         <DataTable
           columns={columns}
-          rows={products ?? []}
-          loading={products === null}
+          rows={products}
+          loading={isLoading}
           getRowKey={(p) => p.id}
           emptyMessage="조건에 맞는 상품이 없습니다."
         />

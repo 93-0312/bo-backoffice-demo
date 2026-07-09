@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Card, Button, Spinner } from "@/shared/ui";
 import { ROUTES } from "@/shared/config";
@@ -7,7 +7,7 @@ import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Descriptions } from "@/widgets/descriptions";
 import {
-  fetchTransaction,
+  useTransactionQuery,
   TransactionResultBadge,
   PAYMENT_TYPE_LABEL,
   type Transaction,
@@ -23,25 +23,16 @@ import {
  */
 export function TransactionDetailPage() {
   const { id = "" } = useParams();
-  const [tx, setTx] = useState<Transaction | null | undefined>(null); // null=로딩, undefined=없음
+  const { data: tx, isLoading } = useTransactionQuery(id);
 
-  useEffect(() => {
-    let alive = true;
-    setTx(null);
-    fetchTransaction(id).then((d) => alive && setTx(d ?? undefined));
-    return () => {
-      alive = false;
-    };
-  }, [id]);
-
-  if (tx === null) {
+  if (isLoading) {
     return (
       <div className="grid min-h-[40vh] place-items-center">
         <Spinner size="lg" />
       </div>
     );
   }
-  if (tx === undefined) {
+  if (!tx) {
     return (
       <div className="grid min-h-[40vh] place-items-center text-center">
         <div className="flex flex-col items-center gap-3">

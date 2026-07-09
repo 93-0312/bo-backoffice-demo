@@ -9,7 +9,7 @@ import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
 import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
 import {
-  fetchSellerTransactions,
+  useSellerTransactionsQuery,
   SellerTxTypeBadge,
   SellerTxStateBadge,
   SELLER_TX_TYPE_LABEL,
@@ -41,24 +41,19 @@ export function SellerTransactionsPage() {
   const [range, setRange] = useState<DateRange>(EMPTY_RANGE);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [rows, setRows] = useState<SellerTransaction[] | null>(null);
   const debounced = useDebouncedValue(keyword, 300);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let alive = true;
-    setRows(null);
-    fetchSellerTransactions({ keyword: debounced, type, state, excludePayverse }).then(
-      (d) => alive && setRows(d),
-    );
-    return () => {
-      alive = false;
-    };
-  }, [debounced, type, state, excludePayverse]);
+  const { data, isLoading } = useSellerTransactionsQuery({
+    keyword: debounced,
+    type,
+    state,
+    excludePayverse,
+  });
 
   useEffect(() => setPage(1), [debounced, type, state, excludePayverse, range, pageSize]);
 
-  const list = rows ?? [];
+  const list: SellerTransaction[] = data ?? [];
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
   const startNo = (page - 1) * pageSize;
 
@@ -113,7 +108,7 @@ export function SellerTransactionsPage() {
         <DataTable
           columns={columns}
           rows={paged}
-          loading={rows === null}
+          loading={isLoading}
           getRowKey={(t) => t.id}
           onRowClick={(t) => navigate(ROUTES.sellerTransactionDetail(t.tid))}
           emptyMessage="조건에 맞는 거래내역이 없습니다."

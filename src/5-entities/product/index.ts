@@ -10,5 +10,6 @@ export {
   fetchProduct,
   type ProductListParams,
 } from "./api/productApi";
+export { productKeys, useProductsQuery } from "./api/queries";
 export { ProductStatusBadge } from "./ui/ProductStatusBadge";
 export { StockIndicator } from "./ui/StockIndicator";

@@ -6,7 +6,7 @@ import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
 import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
 import {
-  fetchSids,
+  useSidsQuery,
   SidStatusBadge,
   SID_STATUS_LABEL,
   type Sid,
@@ -31,25 +31,17 @@ export function SidListPage() {
   const [range, setRange] = useState<DateRange>(EMPTY_RANGE);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [rows, setRows] = useState<Sid[] | null>(null);
   const debounced = useDebouncedValue(keyword, 300);
 
-  useEffect(() => {
-    let alive = true;
-    setRows(null);
-    fetchSids({ keyword: debounced, status }).then((d) => alive && setRows(d));
-    return () => {
-      alive = false;
-    };
-  }, [debounced, status]);
+  const { data, isLoading } = useSidsQuery({ keyword: debounced, status });
 
   // 날짜 범위는 클라이언트에서 최초접수일 기준으로 거른다.
   const filtered = useMemo(() => {
-    const list = rows ?? [];
+    const list: Sid[] = data ?? [];
     return list.filter(
       (s) => (!range.from || s.receivedAt >= range.from) && (!range.to || s.receivedAt <= range.to),
     );
-  }, [rows, range]);
+  }, [data, range]);
 
   useEffect(() => setPage(1), [debounced, status, range, pageSize]);
 
@@ -105,7 +97,7 @@ export function SidListPage() {
         <DataTable
           columns={columns}
           rows={paged}
-          loading={rows === null}
+          loading={isLoading}
           getRowKey={(s) => s.id}
           emptyMessage="조건에 맞는 SID 가 없습니다."
         />

@@ -11,4 +11,5 @@ export {
   SETTLEMENT_STATE_LABEL,
 } from "./model/types";
 export { fetchSettlements, type SettlementListParams } from "./api/settlementApi";
+export { settlementKeys, useSettlementsQuery } from "./api/queries";
 export { MerchantStatusBadge, SettlementStateBadge } from "./ui/SettlementBadges";

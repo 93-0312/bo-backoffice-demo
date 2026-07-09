@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/shared/ui";
 import { useDebouncedValue } from "@/shared/hooks";
 import { formatRelativeTime } from "@/shared/lib";
@@ -8,7 +8,7 @@ import { UserFilterBar } from "@/features/user-filter";
 import { CreateUserButton } from "@/features/user-create";
 import { DeleteUserButton } from "@/features/user-delete";
 import {
-  fetchUsers,
+  useUsersQuery,
   UserIdentityCell,
   UserRoleBadge,
   UserStatusBadge,
@@ -26,22 +26,12 @@ import {
  */
 export function UsersPage() {
   const [params, setParams] = useState<UserListParams>({ search: "", role: "all", status: "all" });
-  const [users, setUsers] = useState<User[] | null>(null);
   const debouncedSearch = useDebouncedValue(params.search ?? "", 300);
 
-  const load = useCallback(() => {
-    setUsers(null);
-    fetchUsers({ ...params, search: debouncedSearch }).then(setUsers);
-  }, [params, debouncedSearch]);
-
-  useEffect(() => {
-    let alive = true;
-    setUsers(null);
-    fetchUsers({ ...params, search: debouncedSearch }).then((d) => alive && setUsers(d));
-    return () => {
-      alive = false;
-    };
-  }, [params.role, params.status, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { data, isLoading, refetch } = useUsersQuery({ ...params, search: debouncedSearch });
+  const users: User[] = data ?? [];
+  // 생성/삭제(feature mutation) 후 목록 재조회
+  const load = () => void refetch();
 
   const columns: Column<User>[] = [
     { header: "사용자", cell: (u) => <UserIdentityCell user={u} /> },
@@ -76,8 +66,8 @@ export function UsersPage() {
         </div>
         <DataTable
           columns={columns}
-          rows={users ?? []}
-          loading={users === null}
+          rows={users}
+          loading={isLoading}
           getRowKey={(u) => u.id}
           emptyMessage="조건에 맞는 사용자가 없습니다."
         />

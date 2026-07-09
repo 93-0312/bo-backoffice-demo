@@ -7,4 +7,5 @@ export {
   updateOrderStatus,
   __resetOrders,
 } from "./api/orderApi";
+export { orderKeys, useOrdersQuery } from "./api/queries";
 export { OrderStatusBadge } from "./ui/OrderStatusBadge";

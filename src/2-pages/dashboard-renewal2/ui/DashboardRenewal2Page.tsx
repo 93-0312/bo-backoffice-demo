@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import { t } from "@/shared/ui/renewal";
-import {
-  fetchDashboardRenewal,
-  type DashboardRenewalData,
-} from "@/entities/dashboard-renewal";
+import { useDashboardRenewalQuery } from "@/entities/dashboard-renewal";
 import { TopInfoBar } from "@/widgets/renewal-top-info";
 import { TransactionStatusCard } from "@/widgets/renewal-transaction-status";
 import { TargetCard } from "@/widgets/renewal-target";
@@ -86,16 +83,8 @@ export function DashboardRenewal2Page({
 }: {
   variant?: Variant;
 }) {
-  const [data, setData] = useState<DashboardRenewalData | null>(null);
+  const { data } = useDashboardRenewalQuery();
   const [variant, setVariant] = useState<Variant>(initialVariant);
-
-  useEffect(() => {
-    let alive = true;
-    fetchDashboardRenewal().then((d) => alive && setData(d));
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   if (!data) return null;
 

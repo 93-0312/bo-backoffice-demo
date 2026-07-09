@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Card, Button, Spinner } from "@/shared/ui";
 import { ROUTES } from "@/shared/config";
@@ -8,7 +8,7 @@ import { DataTable, type Column } from "@/widgets/data-table";
 import { Descriptions } from "@/widgets/descriptions";
 import { SellerRefundModal } from "@/features/seller-refund";
 import {
-  fetchStidsByTid,
+  useStidsByTidQuery,
   SellerTxTypeBadge,
   SellerTxStateBadge,
   type SellerTransaction,
@@ -23,24 +23,14 @@ import {
  */
 export function SellerTransactionDetailPage() {
   const { tid = "" } = useParams();
-  const [rows, setRows] = useState<SellerTransaction[] | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
 
-  const load = useCallback(() => {
-    setRows(null);
-    fetchStidsByTid(tid).then(setRows);
-  }, [tid]);
+  const { data, isLoading, refetch } = useStidsByTidQuery(tid);
+  const rows: SellerTransaction[] = data ?? [];
+  // 환불(feature mutation) 후 재조회
+  const load = () => void refetch();
 
-  useEffect(() => {
-    let alive = true;
-    setRows(null);
-    fetchStidsByTid(tid).then((d) => alive && setRows(d));
-    return () => {
-      alive = false;
-    };
-  }, [tid]);
-
-  if (rows === null) {
+  if (isLoading) {
     return (
       <div className="grid min-h-[40vh] place-items-center">
         <Spinner size="lg" />

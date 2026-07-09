@@ -7,7 +7,7 @@ import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
 import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
 import {
-  fetchSettlements,
+  useSettlementsQuery,
   MerchantStatusBadge,
   SettlementStateBadge,
   SETTLEMENT_TYPE_LABEL,
@@ -37,21 +37,13 @@ export function SettlementListPage({ sme = false }: { sme?: boolean }) {
   const [range, setRange] = useState<DateRange>(EMPTY_RANGE);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [rows, setRows] = useState<Settlement[] | null>(null);
   const debounced = useDebouncedValue(keyword, 300);
 
-  useEffect(() => {
-    let alive = true;
-    setRows(null);
-    fetchSettlements({ keyword: debounced, state, sme }).then((d) => alive && setRows(d));
-    return () => {
-      alive = false;
-    };
-  }, [debounced, state, sme]);
+  const { data, isLoading } = useSettlementsQuery({ keyword: debounced, state, sme });
 
   useEffect(() => setPage(1), [debounced, state, range, pageSize, sme]);
 
-  const list = rows ?? [];
+  const list: Settlement[] = data ?? [];
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
   const startNo = (page - 1) * pageSize;
 
@@ -116,7 +108,7 @@ export function SettlementListPage({ sme = false }: { sme?: boolean }) {
         <DataTable
           columns={columns}
           rows={paged}
-          loading={rows === null}
+          loading={isLoading}
           getRowKey={(s) => s.id}
           emptyMessage="조건에 맞는 정산 내역이 없습니다."
         />

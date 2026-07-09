@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent, Skeleton } from "@/shared/ui";
 import { ROUTES } from "@/shared/config";
 import { formatCurrency, formatRelativeTime } from "@/shared/lib";
-import { fetchOrders, OrderStatusBadge, type Order } from "@/entities/order";
+import { useOrdersQuery, OrderStatusBadge } from "@/entities/order";
 
 /**
  * RecentOrders — 대시보드의 "최근 주문" 위젯.
@@ -11,15 +10,8 @@ import { fetchOrders, OrderStatusBadge, type Order } from "@/entities/order";
  * entities 의 OrderStatusBadge 를 재사용 → widget 은 레이아웃만 책임진다.
  */
 export function RecentOrders({ limit = 5 }: { limit?: number }) {
-  const [orders, setOrders] = useState<Order[] | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetchOrders().then((data) => alive && setOrders(data.slice(0, limit)));
-    return () => {
-      alive = false;
-    };
-  }, [limit]);
+  const { data } = useOrdersQuery("all");
+  const orders = data ? data.slice(0, limit) : null;
 
   return (
     <Card>

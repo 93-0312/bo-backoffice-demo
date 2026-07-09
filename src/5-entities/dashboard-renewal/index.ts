@@ -17,3 +17,4 @@ export type {
 } from "./model/types";
 export { DASHBOARD_RENEWAL_SEED } from "./model/mock";
 export { fetchDashboardRenewal } from "./api/dashboardRenewalApi";
+export { dashboardRenewalKeys, useDashboardRenewalQuery } from "./api/queries";

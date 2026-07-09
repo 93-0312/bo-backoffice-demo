@@ -2,4 +2,5 @@
 export type { Sid, SidStatus } from "./model/types";
 export { SID_STATUS_LABEL } from "./model/types";
 export { fetchSids, type SidListParams } from "./api/sidApi";
+export { sidKeys, useSidsQuery } from "./api/queries";
 export { SidStatusBadge } from "./ui/SidStatusBadge";

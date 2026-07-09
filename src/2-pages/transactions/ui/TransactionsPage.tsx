@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/shared/ui";
 import { ROUTES } from "@/shared/config";
@@ -6,7 +5,7 @@ import { formatCurrency } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import {
-  fetchTransactions,
+  useTransactionsQuery,
   TransactionResultBadge,
   PAYMENT_TYPE_LABEL,
   type Transaction,
@@ -18,15 +17,8 @@ import {
  */
 export function TransactionsPage() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<Transaction[] | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetchTransactions().then((d) => alive && setRows(d));
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data, isLoading } = useTransactionsQuery();
+  const rows: Transaction[] = data ?? [];
 
   const columns: Column<Transaction>[] = [
     {
@@ -57,8 +49,8 @@ export function TransactionsPage() {
       <Card>
         <DataTable
           columns={columns}
-          rows={rows ?? []}
-          loading={rows === null}
+          rows={rows}
+          loading={isLoading}
           getRowKey={(t) => t.id}
           onRowClick={(t) => navigate(ROUTES.transactionDetail(t.id))}
           emptyMessage="거래가 없습니다."

@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { t } from "@/shared/ui/renewal";
 import {
-  fetchDashboardRenewal,
-  type DashboardRenewalData,
+  useDashboardRenewalQuery,
   type NoticeItem,
 } from "@/entities/dashboard-renewal";
 import { TopInfoBar } from "@/widgets/renewal-top-info";
@@ -49,15 +47,7 @@ const Row = styled.div<{ $hasSide: boolean }>`
 `;
 
 export function DashboardRenewalPage({ layout = DEFAULT_LAYOUT }: { layout?: LayoutRow[] }) {
-  const [data, setData] = useState<DashboardRenewalData | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetchDashboardRenewal().then((d) => alive && setData(d));
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data } = useDashboardRenewalQuery();
 
   if (!data) return null;
 

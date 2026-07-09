@@ -15,6 +15,7 @@ export {
   type UserListParams,
   type CreateUserInput,
 } from "./api/userApi";
+export { userKeys, useUsersQuery } from "./api/queries";
 export { UserStatusBadge } from "./ui/UserStatusBadge";
 export { UserRoleBadge } from "./ui/UserRoleBadge";
 export { UserIdentityCell } from "./ui/UserIdentityCell";
