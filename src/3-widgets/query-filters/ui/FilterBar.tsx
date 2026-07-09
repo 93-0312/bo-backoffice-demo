@@ -21,7 +21,7 @@ export function FilterBar({
   note?: string;
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-border bg-muted/30 p-4">
+    <div className="flex flex-col gap-3 border-b border-border bg-muted p-4">
       <div className="flex flex-wrap items-center gap-2">{children}</div>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{note}</span>

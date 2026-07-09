@@ -170,7 +170,7 @@ export function PgTransactionDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-max text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
+                <tr className="border-b border-border bg-muted">
                   {HEADER_COLS.map((c) => (
                     <th key={c.header} className="whitespace-nowrap px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                       {c.header}

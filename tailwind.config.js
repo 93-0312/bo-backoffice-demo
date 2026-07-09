@@ -37,7 +37,7 @@ export default {
           foreground: "rgb(var(--popover-foreground) / <alpha-value>)",
         },
         muted: {
-          DEFAULT: "rgb(var(--foreground) / 0.04)",
+          DEFAULT: "rgb(var(--muted) / <alpha-value>)",
           foreground: "rgb(var(--muted-foreground) / 0.5)",
         },
         destructive: {
