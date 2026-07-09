@@ -70,39 +70,98 @@ export interface ApiEnvelope<T> {
 export type PgTransactionListResponse = ApiEnvelope<PgTransaction>;
 
 /**
- * 거래 상세(구 BO `/transactionList/{tid}` 화면) 데이터.
- * 목록 필드 + 상세 화면에만 있는 필드들. 값 연동은 이후 단계 — 지금은 레이아웃/필드 구조용.
+ * 거래 상세 응답 (구 BO `GET /admin/transaction/detail?transactId=`).
+ *
+ * 3덩어리: 헤더 그룹(transactGroupList) + 본문(transactDetails) + 리펀드 플래그(transactCheck).
+ * 필드명은 서버 응답 그대로. ⚠️ 리뉴얼 시 API 개수·키/구성이 바뀔 수 있어 optional 로 둔다.
  */
-export interface PgTransactionDetail extends PgTransaction {
-  // 거래 정보
-  productName?: string; // 상품
-  balance?: number; // 잔액
-  chargebackReason?: string; // 차지백 접수 사유
-  resultMessage?: string; // 거래 결과 메세지
-  creditCardReceipt?: string; // 신용카드 전표
-  // 구매자 정보
-  inflowCountry?: string; // 카드 소유자 유입국가
-  installmentYn?: string; // 할부결제 여부
-  installmentMonths?: string; // 할부 개월 수
-  authPaymentType?: string; // 인증결제 유형
-  billingName?: string; // 청구명
-  cardTerminalId?: string; // 카드 단말기 ID
-  // 요청/응답 정보
-  seq?: string; // 순번
-  processorName?: string; // 프로세서 명
-  redirectUrl?: string; // 리다이렉트 URL
-  authCode?: string; // 인증코드
-  requestedAt?: string; // 요청 시간
-  requestUrl?: string; // 요청 URL
-  responseCode?: string; // 응답 코드
-  respondedAt?: string; // 응답 시간
-  tdsPartner?: string; // 3Ds 파트너
-  acquireCurrency?: string; // 매입 통화
-  acquireAmount?: number; // 매입 금액
-  mixedAmountMoney?: number; // 복합 금액(머니)
-  mixedAmountCard?: number; // 복합 금액(카드)
-  // Refund
-  refundDatePeriod?: string; // Refund Date (period)
-  refundYn?: string; // Refund
-  partialRefundYn?: string; // Partial Refund
+export interface PgTransactionGroupItem {
+  transactId: string;
+  transactDate: string;
+  merchantId: string;
+  merchantName: string;
+  transactOrderId: string;
+  transactTypeName: string;
+  transactStatusName: PgTransactionStatus;
+  transactProcessCurrency: string;
+  transactProcessAmount: number;
+  transactSchemeName: string;
+  transactCardNo: string;
+  transactCardHolder: string;
+  customerId: string;
+  regionName: string;
+  regionDisplayName: string;
+  methodName: string;
+  methodDisplayName: string;
+  transactRequestCurrency: string;
+  transactRequestAmount: number;
+  countryCode: string | null;
+}
+
+export interface PgTransactionDetails {
+  merchantId?: string;
+  merchantName?: string;
+  transactOrderId?: string;
+  transactStatusName?: PgTransactionStatus;
+  transactProductName?: string;
+  remainPartnerAmount?: number;
+  remainRequestAmount?: number;
+  transactRequestAmount?: number;
+  transactPartnerAmount?: number;
+  transactRequestCurrency?: string;
+  transactPartnerCurrency?: string;
+  transactCustomerId?: string;
+  transactSchemeCd?: string;
+  transactSchemeName?: string;
+  transactCountryName?: string;
+  transactCardNo?: string;
+  transactCardHolder?: string;
+  transactExchangeRate?: number;
+  merchantDescriptor1?: string;
+  merchantPartnerCd?: string;
+  merchantPartnerMid?: string;
+  transactId?: string;
+  transactType?: string;
+  partnerName?: string;
+  transactSecureType?: string;
+  transactSecureDisplayName?: string | null;
+  transactApprovalNo?: string;
+  transactRedirectUrl?: string;
+  transactRequestUrl?: string;
+  transactRequestDatetime?: string;
+  transactPartnerDatetime?: string;
+  transactResultCode?: string;
+  transactResultMessage?: string;
+  installmentMonths?: string;
+  cardTerminalId?: string | null;
+  customerId?: string;
+  method?: string;
+  methodName?: string;
+  secureName?: string;
+  appCardAmt?: number;
+  appMoneyAmt?: number;
+  partialCcUse?: string;
+  ccUse?: string;
+  refundPeriod?: number;
+  webHookLogExists?: boolean;
+  payCurrCd?: string;
+  transAmt?: number;
+  totalPayAmt?: number;
+  costAmt?: number;
+  decimal?: number;
+  [key: string]: unknown; // 미매핑 필드 허용(리뉴얼 대비)
+}
+
+export interface PgTransactionCheck {
+  transactRefund: boolean;
+  transactChargeback: boolean;
+  transactReversal: boolean;
+  transactGroupCnt: number;
+}
+
+export interface PgTransactionDetailResponse {
+  status: { status: number; code: string; message: string };
+  transactGroupList: PgTransactionGroupItem[];
+  transactDetails: PgTransactionDetails;
+  transactCheck: PgTransactionCheck;
 }

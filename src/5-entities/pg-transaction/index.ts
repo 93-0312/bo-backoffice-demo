@@ -1,10 +1,13 @@
 /** entities/pg-transaction Public API. */
 export type {
   PgTransaction,
-  PgTransactionDetail,
   PgTransactionStatus,
   PgTransactionListParams,
   PgTransactionListResponse,
+  PgTransactionGroupItem,
+  PgTransactionDetails,
+  PgTransactionCheck,
+  PgTransactionDetailResponse,
   ApiEnvelope,
 } from "./model/types";
 export { fetchPgTransactions, fetchPgTransactionDetail } from "./api/pgTransactionApi";

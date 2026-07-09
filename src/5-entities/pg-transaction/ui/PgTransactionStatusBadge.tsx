@@ -6,7 +6,9 @@ const COLOR: Record<string, BadgeProps["color"]> = {
   SUCCESS: "success",
   PENDING: "warning",
   FAILED: "destructive",
+  DECLINE: "destructive",
   CANCELLED: "neutral",
+  REVERSAL: "neutral",
 };
 
 export function PgTransactionStatusBadge({ status }: { status: PgTransactionStatus }) {

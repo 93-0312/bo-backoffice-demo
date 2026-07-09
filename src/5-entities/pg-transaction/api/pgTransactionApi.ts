@@ -1,7 +1,7 @@
 import { delay, hasBoSession, boJson } from "@/shared/api";
 import { PG_TRANSACTION_SEED } from "../model/mock";
 import type {
-  PgTransactionDetail,
+  PgTransactionDetailResponse,
   PgTransactionListParams,
   PgTransactionListResponse,
 } from "../model/types";
@@ -53,19 +53,93 @@ async function fetchReal(params: PgTransactionListParams): Promise<PgTransaction
 /**
  * 거래 상세 조회 (entities/pg-transaction/api).
  *
- * 값 연동은 이후 단계 — 지금은 상세 화면 레이아웃/필드 구조용. 목록 시드에서 기본 필드만
- * 채우고, 상세 전용 필드는 빈 값으로 둔다(구조만 표시). 실서버 어댑터는 목록과 동일 패턴으로
- * 추후 교체(토글).
+ * 실 엔드포인트: GET /bo-api/admin/transaction/detail?transactId={tid}
+ * 토글: BO 세션 있으면 실서버, 없으면 mock(시드로 동일 응답 구조 합성).
  */
-export async function fetchPgTransactionDetail(tid: string): Promise<PgTransactionDetail | null> {
-  const base = PG_TRANSACTION_SEED.find((t) => t.transactId === tid);
-  if (!base) return delay(null, 300);
-  const detail: PgTransactionDetail = {
-    ...base,
-    seq: base.transactId,
-    // 상세 전용 필드는 이후 연동 — 현재는 빈 구조
-  };
-  return delay(detail, 300);
+export async function fetchPgTransactionDetail(
+  tid: string,
+): Promise<PgTransactionDetailResponse | null> {
+  return hasBoSession() ? fetchRealDetail(tid) : fetchMockDetail(tid);
+}
+
+async function fetchRealDetail(tid: string): Promise<PgTransactionDetailResponse | null> {
+  return boJson<PgTransactionDetailResponse>(
+    `/admin/transaction/detail?transactId=${encodeURIComponent(tid)}`,
+    { method: "GET" },
+  );
+}
+
+/** mock — 목록 시드 한 건으로 상세 응답 구조를 합성한다(상세 전용 필드는 비움). */
+async function fetchMockDetail(tid: string): Promise<PgTransactionDetailResponse | null> {
+  const b = PG_TRANSACTION_SEED.find((t) => t.transactId === tid);
+  if (!b) return delay(null, 300);
+  return delay(
+    {
+      status: { status: 200, code: "0000", message: "Success" },
+      transactGroupList: [
+        {
+          transactId: b.transactId,
+          transactDate: b.transactDate,
+          merchantId: b.merchantId,
+          merchantName: b.merchantName,
+          transactOrderId: b.transactOrderId,
+          transactTypeName: b.transactTypeName,
+          transactStatusName: b.transactStatusName,
+          transactProcessCurrency: b.transactProcessCurrency,
+          transactProcessAmount: b.transactProcessAmount,
+          transactSchemeName: b.transactSchemeName,
+          transactCardNo: b.transactCardNo,
+          transactCardHolder: b.transactCardHolder ?? "",
+          customerId: b.customerId,
+          regionName: b.transCountryNm,
+          regionDisplayName: b.transCountryNm,
+          methodName: b.methodDisplayName,
+          methodDisplayName: b.methodDisplayName,
+          transactRequestCurrency: b.transactRequestCurrency,
+          transactRequestAmount: b.transactRequestAmount,
+          countryCode: b.transCountryCd,
+        },
+      ],
+      transactDetails: {
+        merchantId: b.merchantId,
+        merchantName: b.merchantName,
+        transactOrderId: b.transactOrderId,
+        transactStatusName: b.transactStatusName,
+        transactProductName: "",
+        remainPartnerAmount: 0,
+        transactRequestAmount: b.transactRequestAmount,
+        transactPartnerAmount: b.transactProcessAmount,
+        transactRequestCurrency: b.transactRequestCurrency,
+        transactPartnerCurrency: b.transactProcessCurrency,
+        transactCustomerId: b.customerId,
+        transactSchemeName: b.transactSchemeName,
+        transactCountryName: b.transCountryNm,
+        transactCardNo: b.transactCardNo,
+        transactCardHolder: b.transactCardHolder ?? "",
+        transactId: b.transactId,
+        transactType: b.transactTypeName,
+        partnerName: "",
+        transactRequestDatetime: b.transactDate,
+        transactPartnerDatetime: b.transactDate,
+        installmentMonths: "00",
+        customerId: b.customerId,
+        methodName: b.methodDisplayName,
+        appCardAmt: 0,
+        appMoneyAmt: 0,
+        partialCcUse: "N",
+        ccUse: "N",
+        refundPeriod: 0,
+        webHookLogExists: false,
+      },
+      transactCheck: {
+        transactRefund: false,
+        transactChargeback: false,
+        transactReversal: false,
+        transactGroupCnt: 1,
+      },
+    },
+    300,
+  );
 }
 
 /** 오늘 00:00:00 ~ 23:59:59 (실서버 기본 조회 범위) */
