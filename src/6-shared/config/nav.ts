@@ -59,6 +59,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "상품", to: ROUTES.products, icon: IconProducts },
       { label: "주문", to: ROUTES.orders, icon: IconOrders },
       { label: "거래", to: ROUTES.transactions, icon: IconReceipt },
+      { label: "거래내역 (PG)", to: ROUTES.pgTransactions, icon: IconReceipt },
     ],
   },
   {
