@@ -5,28 +5,28 @@ import { ApiError } from "./client";
  *
  * 모든 요청은 Vite 프록시(`/bo-api/*` → dev 호스트)를 통해 나가 CORS 를 우회한다.
  * 인증은 Bearer 토큰 — 로그인 성공 시 저장한 토큰을 Authorization 헤더로 붙인다.
- * 토큰은 sessionStorage 에만 둔다(레포/영속 저장 안 함).
+ * 토큰은 localStorage 에 둔다(새 창/탭에서도 공유되도록 — 상세를 새 창으로 여는 흐름 지원).
  */
 const BO_TOKEN_KEY = "bo-access-token";
 
 export const boSession = {
   get: (): string | null => {
     try {
-      return sessionStorage.getItem(BO_TOKEN_KEY);
+      return localStorage.getItem(BO_TOKEN_KEY);
     } catch {
       return null;
     }
   },
   set: (token: string) => {
     try {
-      sessionStorage.setItem(BO_TOKEN_KEY, token);
+      localStorage.setItem(BO_TOKEN_KEY, token);
     } catch {
       /* ignore */
     }
   },
   clear: () => {
     try {
-      sessionStorage.removeItem(BO_TOKEN_KEY);
+      localStorage.removeItem(BO_TOKEN_KEY);
     } catch {
       /* ignore */
     }

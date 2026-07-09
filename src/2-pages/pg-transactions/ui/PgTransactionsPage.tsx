@@ -31,16 +31,21 @@ const columns: Column<PgTransaction>[] = [
   {
     header: "거래번호",
     cell: (t) => (
-      // 거래번호 클릭 → 상세를 새 창으로 (구 BO 동작 재현)
-      <a
-        href={ROUTES.pgTransactionDetail(t.transactId)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-mono text-xs text-primary underline-offset-2 hover:underline"
-        onClick={(e) => e.stopPropagation()}
+      // 거래번호 클릭 → 상세를 새 "창"(팝업)으로 오픈 (구 BO 동작 재현: window.open _blank)
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          window.open(
+            ROUTES.pgTransactionDetail(t.transactId),
+            `tx_${t.transactId}`,
+            "width=1400,height=900,resizable=yes,scrollbars=yes",
+          );
+        }}
+        className="cursor-pointer font-mono text-xs text-primary underline-offset-2 hover:underline"
       >
         {t.transactId}
-      </a>
+      </button>
     ),
   },
   { header: "거래일시", cell: (t) => <span className="text-sm">{t.transactDate}</span> },
