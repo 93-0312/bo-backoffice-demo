@@ -3,5 +3,11 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/bo-api/:path*",
+      "destination": "https://bo-dev.payverseglobal.com/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
