@@ -545,6 +545,21 @@ export function DataTable<T>({
                   </TableHead>
                 );
               })}
+              {/*
+                필러 열 — 남는 가로 폭을 흡수한다. 이게 없으면 w-full 표가 슬랙을
+                실제 컬럼에 억지로 분배해(table-layout:auto 에선 max-width 도 무시),
+                리사이즈·자동맞춤으로 지정한 폭이 화면에서 늘어나 보인다.
+                컬럼이 컨테이너를 꽉 채우거나 넘치면 폭 0 이라 티가 나지 않는다.
+              */}
+              <TableHead
+                aria-hidden
+                className={cn("w-auto p-0", stickyHeader && "bg-card")}
+                style={
+                  stickyHeader
+                    ? { position: "sticky", top: 0, zIndex: 20 }
+                    : undefined
+                }
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -553,7 +568,7 @@ export function DataTable<T>({
             ) : rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={colCount}
+                  colSpan={colCount + 1 /* 필러 열까지 포함해 전체 폭에 걸친다 */}
                   className="py-12 text-center text-muted-foreground"
                 >
                   {emptyMessage}
