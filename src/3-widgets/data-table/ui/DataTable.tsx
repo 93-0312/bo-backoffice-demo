@@ -404,11 +404,14 @@ export function DataTable<T>({
                     )}
                     <div
                       onMouseDown={(e) => handleResizeStart(e, i)}
-                      className="absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/50 active:bg-primary"
+                      className="group absolute right-0 top-0 z-10 h-full w-3 cursor-col-resize touch-none select-none"
                       role="separator"
                       aria-orientation="vertical"
                       aria-label={`${col.header} 컬럼 너비 조절`}
-                    />
+                      title="드래그하여 컬럼 너비 조절"
+                    >
+                      <div className="absolute right-0 top-1/2 h-3/5 w-px -translate-y-1/2 bg-border transition-colors group-hover:w-1 group-hover:bg-primary" />
+                    </div>
                   </TableHead>
                 );
               })}
