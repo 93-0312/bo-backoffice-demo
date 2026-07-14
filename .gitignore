@@ -6,3 +6,8 @@ dist-ssr
 .vite
 *.tsbuildinfo
 coverage
+
+# 로컬 env (.env.example 만 커밋)
+.env
+.env.*
+!.env.example
