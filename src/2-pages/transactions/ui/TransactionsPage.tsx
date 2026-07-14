@@ -60,6 +60,7 @@ export function TransactionsPage() {
       <PageHeader title="거래" description="결제 거래 내역을 조회하고 상세로 진입합니다." />
       <Card>
         <DataTable
+          storageKey="transactions"
           columns={columns}
           rows={sortedRows}
           loading={isLoading}

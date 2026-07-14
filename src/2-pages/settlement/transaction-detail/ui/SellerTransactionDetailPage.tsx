@@ -112,7 +112,12 @@ export function SellerTransactionDetailPage() {
 
       <Card>
         <div className="border-b border-border p-4 text-sm font-semibold">STID 거래 내역</div>
-        <DataTable columns={columns} rows={rows} getRowKey={(r) => r.id} />
+        <DataTable
+          storageKey="settlement-seller-transaction-detail"
+          columns={columns}
+          rows={rows}
+          getRowKey={(r) => r.id}
+        />
       </Card>
 
       <SellerRefundModal

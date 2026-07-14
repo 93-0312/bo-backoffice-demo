@@ -89,6 +89,7 @@ export function ProductsPage() {
           />
         </div>
         <DataTable
+          storageKey="products"
           columns={columns}
           rows={sortedProducts}
           loading={isLoading}

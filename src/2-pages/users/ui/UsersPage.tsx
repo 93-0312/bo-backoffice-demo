@@ -76,6 +76,7 @@ export function UsersPage() {
           <UserFilterBar value={params} onChange={setParams} />
         </div>
         <DataTable
+          storageKey="users"
           columns={columns}
           rows={sortedUsers}
           loading={isLoading}

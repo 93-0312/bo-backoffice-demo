@@ -106,6 +106,7 @@ export function SettlementListPage({ sme = false }: { sme?: boolean }) {
           />
         </FilterBar>
         <DataTable
+          storageKey="settlement-list"
           columns={columns}
           rows={paged}
           loading={isLoading}

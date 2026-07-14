@@ -106,6 +106,7 @@ export function SellerTransactionsPage() {
           </label>
         </FilterBar>
         <DataTable
+          storageKey="settlement-seller-transactions"
           columns={columns}
           rows={paged}
           loading={isLoading}

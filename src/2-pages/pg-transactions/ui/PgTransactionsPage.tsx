@@ -221,6 +221,7 @@ export function PgTransactionsPage() {
         )}
 
         <DataTable
+          storageKey="pg-transactions"
           columns={columns}
           rows={rows}
           loading={isLoading}

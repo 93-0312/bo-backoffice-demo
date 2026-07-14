@@ -95,6 +95,7 @@ export function SidListPage() {
           />
         </FilterBar>
         <DataTable
+          storageKey="settlement-sids"
           columns={columns}
           rows={paged}
           loading={isLoading}

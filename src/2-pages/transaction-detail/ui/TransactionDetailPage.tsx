@@ -94,6 +94,7 @@ export function TransactionDetailPage() {
       {/* 거래 이력 */}
       <Section title="거래 이력">
         <DataTable
+          storageKey="transaction-detail-history"
           columns={historyColumns}
           rows={[tx]}
           getRowKey={(t) => t.id}
@@ -103,6 +104,7 @@ export function TransactionDetailPage() {
       {/* STID 거래 내역 */}
       <Section title="STID 거래 내역">
         <DataTable
+          storageKey="transaction-detail-stids"
           columns={stidColumns}
           rows={tx.stids}
           getRowKey={(s) => s.stid}

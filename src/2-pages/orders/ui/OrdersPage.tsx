@@ -97,6 +97,7 @@ export function OrdersPage() {
           </TabsList>
         </Tabs>
         <DataTable
+          storageKey="orders"
           columns={columns}
           rows={sortedOrders}
           loading={isLoading}

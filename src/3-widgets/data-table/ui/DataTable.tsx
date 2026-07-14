@@ -16,7 +16,9 @@ import {
   TableCell,
   Skeleton,
   Checkbox,
+  Button,
   IconChevronRight,
+  IconList,
 } from "@/shared/ui";
 import { cn } from "@/shared/lib";
 
@@ -53,6 +55,11 @@ export interface Column<T> {
   header: string;
   /** 셀 렌더러 */
   cell: (row: T) => ReactNode;
+  /**
+   * 컬럼 식별자. 숨김 상태를 storageKey 로 저장할 때 이 값으로 컬럼을 구분한다.
+   * 없으면 header 로 대체 — header 가 비었거나 중복되는 컬럼은 저장 안정성을 위해 지정 권장.
+   */
+  id?: string;
   className?: string;
   align?: "left" | "right" | "center";
   /** 지정하면 이 컬럼은 정렬 가능해진다(헤더 클릭 → onSortChange emit). */
@@ -86,6 +93,17 @@ export interface DataTableProps<T> {
   stickyHeader?: boolean;
   /** 본문 세로 스크롤 상한(px 또는 CSS 길이). 지정 시 스크롤 컨테이너가 생긴다. */
   maxHeight?: number | string;
+  /**
+   * 표 우상단 "컬럼" 토글(숨기기/보이기) 버튼 노출. 기본 true.
+   * false 로 주면 토글 자체가 사라진다(모든 컬럼 항상 표시).
+   */
+  columnToggle?: boolean;
+  /**
+   * 숨김 컬럼 상태를 localStorage 에 테이블 단위로 저장할 키.
+   * 지정 시 `bo-dt-hidden:<storageKey>` 로 저장 → 새로고침/재방문에도 유지된다.
+   * 없으면 세션 한정(새로고침하면 초기화). 페이지마다 다른 값을 줘야 서로 간섭하지 않는다.
+   */
+  storageKey?: string;
 }
 
 const alignClass = {
@@ -96,6 +114,9 @@ const alignClass = {
 
 /** 선택 체크박스 컬럼 폭(px) — w-10. 좌측 고정 오프셋 계산의 시작점. */
 const SELECT_COL_W = 40;
+
+/** 숨김 컬럼 상태 localStorage 키 접두사(테이블별 storageKey 와 결합). */
+const HIDDEN_STORE_PREFIX = "bo-dt-hidden:";
 
 /** 드래그 리사이즈 시 컬럼이 줄어들 수 있는 최소 폭(px) — 리사이즈 핸들 히트 영역만큼만 확보하고,
  * 내용이 더 넓으면 셀에서 말줄임(ellipsis)으로 처리한다. */
@@ -111,10 +132,12 @@ function getFixedInfos<T>(
   columns: Column<T>[],
   selectionFixed: boolean,
   getWidth: (index: number) => number | undefined,
+  isHidden: (index: number) => boolean,
 ): (FixedInfo | undefined)[] {
   const infos: (FixedInfo | undefined)[] = columns.map(() => undefined);
   let left = selectionFixed ? SELECT_COL_W : 0;
   columns.forEach((c, i) => {
+    if (isHidden(i)) return; // 숨긴 컬럼은 스택에서 빠지므로 offset 에 반영하지 않는다.
     if (c.fixed === "left") {
       infos[i] = { side: "left", offset: left };
       left += getWidth(i) ?? 0;
@@ -122,6 +145,7 @@ function getFixedInfos<T>(
   });
   let right = 0;
   for (let i = columns.length - 1; i >= 0; i--) {
+    if (isHidden(i)) continue;
     if (columns[i].fixed === "right") {
       infos[i] = { side: "right", offset: right };
       right += getWidth(i) ?? 0;
@@ -183,6 +207,8 @@ export function DataTable<T>({
   onSelectionChange,
   stickyHeader,
   maxHeight,
+  columnToggle = true,
+  storageKey,
 }: DataTableProps<T>) {
   const selecting = !!selectable && !!onSelectionChange;
   const selectedSet = new Set(selectedKeys ?? []);
@@ -191,7 +217,43 @@ export function DataTable<T>({
   const allChecked =
     pageKeys.length > 0 && selectedOnPage.length === pageKeys.length;
   const someChecked = selectedOnPage.length > 0 && !allChecked;
-  const colCount = columns.length + (selecting ? 1 : 0);
+
+  // 컬럼 식별 키 — 저장/숨김 판별의 기준. id 우선, 없으면 header, 그것도 비면 인덱스.
+  const colKey = (col: Column<T>, i: number) =>
+    col.id ?? (col.header || `__col_${i}`);
+
+  // 숨긴 컬럼 key 집합. storageKey 가 있으면 localStorage 에 테이블 단위로 저장한다.
+  const [hiddenKeys, setHiddenKeys] = useState<string[]>(() => {
+    if (!storageKey) return [];
+    try {
+      const raw = localStorage.getItem(HIDDEN_STORE_PREFIX + storageKey);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      localStorage.setItem(
+        HIDDEN_STORE_PREFIX + storageKey,
+        JSON.stringify(hiddenKeys),
+      );
+    } catch {
+      /* 무시 */
+    }
+  }, [storageKey, hiddenKeys]);
+
+  const hiddenSet = new Set(hiddenKeys);
+  const isHidden = (i: number) => hiddenSet.has(colKey(columns[i], i));
+  const visibleCount = columns.reduce((n, _, i) => n + (isHidden(i) ? 0 : 1), 0);
+  const colCount = visibleCount + (selecting ? 1 : 0);
+
+  const toggleColumn = (key: string) => {
+    setHiddenKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
 
   // 컬럼 폭(px) — 초기값은 Column.width, 드래그로 리사이즈하면 여기 반영된다.
   const [colWidths, setColWidths] = useState<(number | undefined)[]>(() =>
@@ -259,8 +321,11 @@ export function DataTable<T>({
       const th = thRefs.current[index];
       const table = th?.closest("table");
       if (!th || !table) return;
-      // DOM 상 컬럼 인덱스는 맨 앞 선택(체크박스) 컬럼만큼 밀린다.
-      const domCol = index + (selecting ? 1 : 0);
+      // DOM 상 컬럼 인덱스 = 선택 컬럼(있으면 1) + index 앞의 "보이는" 컬럼 수.
+      // (숨긴 컬럼은 렌더되지 않아 DOM 위치가 밀리므로 원본 index 를 그대로 못 쓴다)
+      const domCol =
+        (selecting ? 1 : 0) +
+        columns.slice(0, index).reduce((n, _, j) => n + (isHidden(j) ? 0 : 1), 0);
       const cells = Array.from(table.querySelectorAll("tr"))
         .map((tr) => tr.children[domCol] as HTMLElement | undefined)
         .filter((c): c is HTMLElement => !!c);
@@ -286,7 +351,9 @@ export function DataTable<T>({
         return next;
       });
     },
-    [selecting],
+    // isHidden/columns 는 매 렌더 새로 만들어지므로 hiddenKeys·columns 를 직접 의존한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selecting, columns, hiddenKeys],
   );
 
   // 고정 컬럼: 선택 컬럼도 좌측 고정이 하나라도 있으면 함께 왼쪽에 붙인다.
@@ -295,6 +362,7 @@ export function DataTable<T>({
     columns,
     selectionFixed,
     (i) => colWidths[i],
+    isHidden,
   );
 
   /** 컬럼 셀(th/td)의 인라인 style — width/고정 위치/z-index 를 합친다. */
@@ -385,6 +453,17 @@ export function DataTable<T>({
     <>
       {/* 데스크톱/태블릿(md↑): 표. 모바일에선 숨기고 카드로 대체. */}
       <div className="hidden md:block">
+        {columnToggle && (
+          <div className="mb-2 flex justify-end">
+            <ColumnToggle
+              columns={columns}
+              colKey={colKey}
+              hiddenSet={hiddenSet}
+              visibleCount={visibleCount}
+              onToggle={toggleColumn}
+            />
+          </div>
+        )}
         <Table maxHeight={maxHeight}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -402,6 +481,7 @@ export function DataTable<T>({
                 </TableHead>
               )}
               {columns.map((col, i) => {
+                if (isHidden(i)) return null;
                 const sortable = !!col.sortKey && !!onSortChange;
                 const active = sortable && sort?.key === col.sortKey;
                 const info = fixedInfos[i];
@@ -504,6 +584,7 @@ export function DataTable<T>({
                       </TableCell>
                     )}
                     {columns.map((col, i) => {
+                      if (isHidden(i)) return null;
                       const info = fixedInfos[i];
                       return (
                         <TableCell
@@ -528,10 +609,10 @@ export function DataTable<T>({
         </Table>
       </div>
 
-      {/* 모바일(md 미만): 같은 columns 를 "라벨:값" 카드로 재활용해 렌더 */}
+      {/* 모바일(md 미만): 같은 columns 를 "라벨:값" 카드로 재활용해 렌더(숨긴 컬럼 제외) */}
       <div className="flex flex-col gap-3 p-3 md:hidden">
         <MobileCards
-          columns={columns}
+          columns={columns.filter((_, i) => !isHidden(i))}
           rows={rows}
           getRowKey={getRowKey}
           loading={loading}
@@ -543,6 +624,88 @@ export function DataTable<T>({
         />
       </div>
     </>
+  );
+}
+
+/**
+ * ColumnToggle — 표 우상단 "컬럼" 버튼 + 체크박스 드롭다운.
+ * 체크를 끄면 그 컬럼을 숨긴다(부모의 onToggle 로 emit). 마지막 1개는 못 끄게 막아 빈 표를 방지.
+ * 킷에 팝오버 프리미티브가 없어 얇은 커스텀 드롭다운으로 구현한다(바깥 클릭 시 닫힘).
+ */
+function ColumnToggle<T>({
+  columns,
+  colKey,
+  hiddenSet,
+  visibleCount,
+  onToggle,
+}: {
+  columns: Column<T>[];
+  colKey: (col: Column<T>, i: number) => string;
+  hiddenSet: Set<string>;
+  visibleCount: number;
+  onToggle: (key: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        icon={<IconList className="size-4" />}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        컬럼 {visibleCount}/{columns.length}
+      </Button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-40 mt-1 max-h-72 w-52 overflow-y-auto rounded-radius-md border border-border bg-card p-1 shadow-lg"
+        >
+          {columns.map((col, i) => {
+            const key = colKey(col, i);
+            const label = col.header || `컬럼 ${i + 1}`;
+            const checked = !hiddenSet.has(key);
+            // 마지막 남은 1개는 못 끄게 막는다(모든 컬럼이 사라지는 것 방지).
+            const lockLast = checked && visibleCount === 1;
+            return (
+              <label
+                key={i}
+                className={cn(
+                  "flex items-center gap-2 rounded-radius-sm px-2 py-1.5 text-sm",
+                  lockLast
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer hover:bg-muted",
+                )}
+              >
+                <Checkbox
+                  checked={checked}
+                  disabled={lockLast}
+                  onCheckedChange={() => {
+                    if (!lockLast) onToggle(key);
+                  }}
+                  aria-label={`${label} 표시`}
+                />
+                <span className="truncate">{label}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
