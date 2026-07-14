@@ -313,13 +313,14 @@ export function DataTable<T>({
 
   /**
    * 리사이즈 핸들 더블클릭 → 컬럼을 그 열의 가장 넓은 콘텐츠에 딱 맞춘다.
-   * 해당 열의 헤더/본문 셀에서 폭 제약(width/min/max)을 잠깐 풀면 브라우저가
-   * 열을 max-content 로 넓히므로, 그때의 실제 폭을 읽어 colWidths 에 반영한다.
+   * 대상 열의 셀에서 폭 제약(width/min/max)을 잠깐 풀어 max-content 폭을 읽는다.
+   * 이때 표가 w-full(100%)이라 남는 공간이 있으면 제약 푼 열이 그 슬랙을 전부
+   * 먹어버리므로, 측정 동안 표 자체도 콘텐츠 폭(auto)으로 줄여 슬랙을 없앤다.
    */
   const handleAutoFit = useCallback(
     (index: number) => {
       const th = thRefs.current[index];
-      const table = th?.closest("table");
+      const table = th?.closest("table") as HTMLTableElement | null;
       if (!th || !table) return;
       // DOM 상 컬럼 인덱스 = 선택 컬럼(있으면 1) + index 앞의 "보이는" 컬럼 수.
       // (숨긴 컬럼은 렌더되지 않아 DOM 위치가 밀리므로 원본 index 를 그대로 못 쓴다)
@@ -334,6 +335,9 @@ export function DataTable<T>({
       const saved = cells.map(
         (c) => [c.style.width, c.style.minWidth, c.style.maxWidth] as const,
       );
+      const savedTableWidth = table.style.width;
+      // 표를 콘텐츠 폭으로 축소(슬랙 제거) + 대상 열 제약 해제 → 실제 max-content 만 남는다.
+      table.style.width = "auto";
       cells.forEach((c) => {
         c.style.width = "auto";
         c.style.minWidth = "0";
@@ -341,6 +345,7 @@ export function DataTable<T>({
       });
       // getBoundingClientRect 읽기가 동기 리플로우를 강제해 방금 푼 폭이 반영된다.
       const natural = Math.ceil(th.getBoundingClientRect().width) + 1; // 여유 1px
+      table.style.width = savedTableWidth;
       cells.forEach((c, i) => {
         [c.style.width, c.style.minWidth, c.style.maxWidth] = saved[i];
       });
