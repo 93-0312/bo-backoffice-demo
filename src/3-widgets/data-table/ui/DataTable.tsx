@@ -459,7 +459,7 @@ export function DataTable<T>({
       {/* 데스크톱/태블릿(md↑): 표. 모바일에선 숨기고 카드로 대체. */}
       <div className="hidden md:block">
         {columnToggle && (
-          <div className="mb-2 flex justify-end">
+          <div className="mb-2 mr-2 mt-2 flex justify-end">
             <ColumnToggle
               columns={columns}
               colKey={colKey}
