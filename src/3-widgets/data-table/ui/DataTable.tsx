@@ -97,8 +97,9 @@ const alignClass = {
 /** 선택 체크박스 컬럼 폭(px) — w-10. 좌측 고정 오프셋 계산의 시작점. */
 const SELECT_COL_W = 40;
 
-/** 드래그 리사이즈 시 컬럼이 줄어들 수 있는 최소 폭(px). */
-const MIN_COL_WIDTH = 60;
+/** 드래그 리사이즈 시 컬럼이 줄어들 수 있는 최소 폭(px) — 리사이즈 핸들 히트 영역만큼만 확보하고,
+ * 내용이 더 넓으면 셀에서 말줄임(ellipsis)으로 처리한다. */
+const MIN_COL_WIDTH = 32;
 
 type FixedInfo = { side: "left" | "right"; offset: number };
 
@@ -264,13 +265,16 @@ export function DataTable<T>({
   ): CSSProperties | undefined => {
     const width = colWidths[index];
     const style: CSSProperties = {};
-    if (width != null) style.width = width;
+    if (width != null) {
+      // min/max 로 폭을 못박아야 내용이 길어도 table-layout: auto 가 컬럼을 다시
+      // 늘리지 않는다 — 리사이즈로 좁힌 폭보다 내용이 길면 셀에서 말줄임 처리된다.
+      style.width = width;
+      style.minWidth = width;
+      style.maxWidth = width;
+    }
     if (info) {
       style.position = "sticky";
       style[info.side] = info.offset;
-      // 고정 컬럼은 폭을 못박아야 오프셋 계산과 어긋나지 않는다.
-      style.minWidth = width;
-      style.maxWidth = width;
       style.zIndex = header ? 30 : 10; // 헤더+고정(코너)이 가장 위
     }
     if (header && stickyHeader) {
@@ -376,7 +380,7 @@ export function DataTable<T>({
                     }
                     style={cellStyle(i, info, true)}
                     className={cn(
-                      "relative whitespace-nowrap",
+                      "relative overflow-hidden whitespace-nowrap",
                       col.align && alignClass[col.align],
                       fixedClass(info, true),
                       col.className,
@@ -389,18 +393,18 @@ export function DataTable<T>({
                           onSortChange!(nextSort(col.sortKey!, sort))
                         }
                         className={cn(
-                          "inline-flex items-center gap-1 transition-colors hover:text-foreground",
+                          "flex w-full min-w-0 items-center gap-1 transition-colors hover:text-foreground",
                           col.align === "right" && "flex-row-reverse",
                           active && "text-foreground",
                         )}
                       >
-                        {col.header}
+                        <span className="min-w-0 truncate">{col.header}</span>
                         <SortIndicator
                           direction={active ? sort!.direction : undefined}
                         />
                       </button>
                     ) : (
-                      col.header
+                      <span className="block truncate">{col.header}</span>
                     )}
                     <div
                       onMouseDown={(e) => handleResizeStart(e, i)}
@@ -465,13 +469,13 @@ export function DataTable<T>({
                           key={i}
                           style={cellStyle(i, info, false)}
                           className={cn(
-                            "whitespace-nowrap",
+                            "overflow-hidden whitespace-nowrap",
                             col.align && alignClass[col.align],
                             fixedClass(info, false),
                             col.className,
                           )}
                         >
-                          {col.cell(row)}
+                          <div className="truncate">{col.cell(row)}</div>
                         </TableCell>
                       );
                     })}
