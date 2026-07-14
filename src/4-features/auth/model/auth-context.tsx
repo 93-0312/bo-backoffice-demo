@@ -72,15 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           method: "POST",
           body: JSON.stringify({ loginId, loginPw: password, lang: "ko" }),
         });
-        if (!validRes.ok) {
-          let msg = "아이디 또는 비밀번호가 올바르지 않습니다.";
-          try {
-            const b = (await validRes.json()) as { message?: string };
-            if (b?.message) msg = b.message;
-          } catch {
-            /* no body */
-          }
-          throw new ApiError(msg, validRes.status);
+        if (validRes.status >= 400) {
+          const b = (validRes.data ?? {}) as { message?: string };
+          throw new ApiError(b?.message ?? "아이디 또는 비밀번호가 올바르지 않습니다.", validRes.status);
         }
         // 2) 로그인 → OTP QR
         const login = await boJson<LoginQrResponse>("/login", {
@@ -95,17 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           method: "POST",
           body: JSON.stringify({ loginId, otpKey }),
         });
-        if (!res.ok) {
-          let msg = "OTP 인증에 실패했습니다.";
-          try {
-            const b = (await res.json()) as { message?: string };
-            if (b?.message) msg = b.message;
-          } catch {
-            /* no body */
-          }
-          throw new ApiError(msg, res.status);
+        if (res.status >= 400) {
+          const b = (res.data ?? {}) as { message?: string };
+          throw new ApiError(b?.message ?? "OTP 인증에 실패했습니다.", res.status);
         }
-        const body = (await res.json().catch(() => ({}))) as OtpLoginResponse;
+        const body = (res.data ?? {}) as OtpLoginResponse;
         const token = extractBearerToken(res, body);
         if (!token) {
           throw new ApiError(
