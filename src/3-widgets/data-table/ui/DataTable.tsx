@@ -540,7 +540,14 @@ export function DataTable<T>({
                       aria-label={`${col.header} 컬럼 너비 조절`}
                       title="드래그: 너비 조절 · 더블클릭: 콘텐츠에 맞춤"
                     >
-                      <div className="absolute right-0 top-1/2 h-3/5 w-px -translate-y-1/2 bg-border transition-colors group-hover:w-1 group-hover:bg-primary" />
+                      {/* 좌측 고정 컬럼은 이미 셀 border-r 이 구분선을 그리므로, 핸들 기본선은
+                          숨겨 이중선을 방지한다(호버 시 primary 인디케이터는 그대로 표시). */}
+                      <div
+                        className={cn(
+                          "absolute right-0 top-1/2 h-3/5 w-px -translate-y-1/2 transition-colors group-hover:w-1 group-hover:bg-primary",
+                          info?.side === "left" ? "bg-transparent" : "bg-border",
+                        )}
+                      />
                     </div>
                   </TableHead>
                 );
