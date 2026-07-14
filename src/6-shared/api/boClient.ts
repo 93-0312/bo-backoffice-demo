@@ -47,18 +47,41 @@ export async function boRequest(path: string, init: RequestInit = {}): Promise<R
   return fetch(`/bo-api${path}`, { ...init, headers });
 }
 
-/** JSON 요청 — 실패 시 서버 message 로 ApiError 를 던진다. */
+/**
+ * 응답 → ApiError 정규화 (에러 경로 전용).
+ *
+ * 백엔드 에러 봉투가 어떤 모양이든 앱은 항상 같은 ApiError(status·message·code·raw)만
+ * 상대하도록 만든다. "규약을 다 알아야" 하는 게 아니라, 아는 후보를 순서대로 훑고
+ * 없으면 HTTP status 로 폴백한다(안 깨짐). 원본은 raw 로 통째 보관하므로 못 뽑은 정보도
+ * 잃지 않는다 — 나중에 실제 규약이 확정되면 이 함수의 후보 목록만 보강하면 된다.
+ *
+ * (성공 응답 봉투는 아직 규약 미확정이라 여기서 건드리지 않는다. "200 + 에러봉투" 케이스도
+ *  확인되면 boJson 에서 body 의 내부 status 를 함께 검사하도록 한 줄 추가하면 된다.)
+ */
+export function toApiError(res: Response, body: unknown): ApiError {
+  const b = (body ?? {}) as Record<string, any>;
+  const message: string =
+    b?.status?.message ?? // 이 BO 의 관찰된 봉투: { status: { code, message } }
+    b?.message ?? // 흔한 평면 모양
+    b?.error?.message ??
+    (typeof b?.error === "string" ? b.error : undefined) ??
+    `요청에 실패했습니다 (${res.status})`; // 정말 모르면 폴백
+  const codeRaw = b?.status?.code ?? b?.code ?? b?.error?.code;
+  const code = codeRaw != null ? String(codeRaw) : undefined;
+  return new ApiError(String(message), res.status, code, body);
+}
+
+/** JSON 요청 — 실패 시 정규화된 ApiError 를 던진다. */
 export async function boJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await boRequest(path, init);
   if (!res.ok) {
-    let message = `요청에 실패했습니다 (${res.status})`;
+    let body: unknown = null;
     try {
-      const body = (await res.json()) as { message?: string };
-      if (body?.message) message = body.message;
+      body = await res.json();
     } catch {
-      /* 본문 없음 */
+      /* 본문 없음/비JSON — raw=null 로 두고 status 폴백 */
     }
-    throw new ApiError(message, res.status);
+    throw toApiError(res, body);
   }
   // 204 등 본문 없는 응답 대응
   const text = await res.text();

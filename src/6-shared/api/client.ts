@@ -15,6 +15,10 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status = 400,
+    /** 백엔드 업무 코드(있으면). 전역에서 특정 코드 분기용. */
+    readonly code?: string,
+    /** 원본 응답 body 통째 보관 — 정규화가 못 뽑은 정보도 잃지 않도록. */
+    readonly raw?: unknown,
   ) {
     super(message);
     this.name = "ApiError";

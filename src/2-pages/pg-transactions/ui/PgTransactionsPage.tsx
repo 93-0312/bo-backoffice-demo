@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Button,
   Card,
   Input,
@@ -7,6 +8,7 @@ import {
   IconSearch,
   type SelectOption,
 } from "@/shared/ui";
+import { ApiError } from "@/shared/api";
 import { formatNumber } from "@/shared/lib";
 import { ROUTES } from "@/shared/config";
 import { useDebouncedValue } from "@/shared/hooks";
@@ -145,13 +147,21 @@ export function PgTransactionsPage() {
   }, [page]);
 
   // 데이터 로딩/캐싱/재조회는 TanStack Query 가 담당 (파라미터 변경 시 자동 재조회).
-  const { data, isLoading } = usePgTransactionsQuery({
+  // 에러도 여기서 나온다 — queryFn(boJson) 이 throw 한 ApiError 가 isError/error 로 노출됨.
+  const { data, isLoading, isError, error } = usePgTransactionsQuery({
     search: debouncedSearch,
     result: status,
     page,
     rows: pageSize,
     locale: "ko",
   });
+
+  // error 는 타입상 Error | null 이라, ApiError 로 좁혀 정규화된 필드(message·code)를 꺼낸다.
+  const errorMessage = isError
+    ? error instanceof ApiError
+      ? error.message
+      : "거래내역을 불러오지 못했습니다."
+    : null;
   const rows: PgTransaction[] = data?.list ?? [];
   const total = data?.count ?? 0;
 
@@ -178,6 +188,15 @@ export function PgTransactionsPage() {
             className="w-40"
           />
         </div>
+
+        {/* useQuery 에러 소비 예시 — 정규화된 ApiError.message(·code) 를 그대로 표시 */}
+        {errorMessage && (
+          <div className="p-4">
+            <Alert type="error" title={errorMessage}>
+              {error instanceof ApiError && error.code ? `에러 코드: ${error.code}` : null}
+            </Alert>
+          </div>
+        )}
 
         {selected.length > 0 && (
           <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2">

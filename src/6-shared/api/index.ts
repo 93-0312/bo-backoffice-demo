@@ -5,6 +5,7 @@ export {
   hasBoSession,
   boRequest,
   boJson,
+  toApiError,
   extractBearerToken,
 } from "./boClient";
 export { queryClient } from "./queryClient";
