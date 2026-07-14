@@ -249,6 +249,46 @@ export function DataTable<T>({
     };
   }, [handleResizeMove, handleResizeEnd]);
 
+  /**
+   * 리사이즈 핸들 더블클릭 → 컬럼을 그 열의 가장 넓은 콘텐츠에 딱 맞춘다.
+   * 해당 열의 헤더/본문 셀에서 폭 제약(width/min/max)을 잠깐 풀면 브라우저가
+   * 열을 max-content 로 넓히므로, 그때의 실제 폭을 읽어 colWidths 에 반영한다.
+   */
+  const handleAutoFit = useCallback(
+    (index: number) => {
+      const th = thRefs.current[index];
+      const table = th?.closest("table");
+      if (!th || !table) return;
+      // DOM 상 컬럼 인덱스는 맨 앞 선택(체크박스) 컬럼만큼 밀린다.
+      const domCol = index + (selecting ? 1 : 0);
+      const cells = Array.from(table.querySelectorAll("tr"))
+        .map((tr) => tr.children[domCol] as HTMLElement | undefined)
+        .filter((c): c is HTMLElement => !!c);
+      if (!cells.length) return;
+
+      const saved = cells.map(
+        (c) => [c.style.width, c.style.minWidth, c.style.maxWidth] as const,
+      );
+      cells.forEach((c) => {
+        c.style.width = "auto";
+        c.style.minWidth = "0";
+        c.style.maxWidth = "none";
+      });
+      // getBoundingClientRect 읽기가 동기 리플로우를 강제해 방금 푼 폭이 반영된다.
+      const natural = Math.ceil(th.getBoundingClientRect().width) + 1; // 여유 1px
+      cells.forEach((c, i) => {
+        [c.style.width, c.style.minWidth, c.style.maxWidth] = saved[i];
+      });
+
+      setColWidths((prev) => {
+        const next = [...prev];
+        next[index] = Math.max(MIN_COL_WIDTH, natural);
+        return next;
+      });
+    },
+    [selecting],
+  );
+
   // 고정 컬럼: 선택 컬럼도 좌측 고정이 하나라도 있으면 함께 왼쪽에 붙인다.
   const selectionFixed = selecting && columns.some((c) => c.fixed === "left");
   const fixedInfos = getFixedInfos(
@@ -408,11 +448,12 @@ export function DataTable<T>({
                     )}
                     <div
                       onMouseDown={(e) => handleResizeStart(e, i)}
+                      onDoubleClick={() => handleAutoFit(i)}
                       className="group absolute right-0 top-0 z-10 h-full w-3 cursor-col-resize touch-none select-none"
                       role="separator"
                       aria-orientation="vertical"
                       aria-label={`${col.header} 컬럼 너비 조절`}
-                      title="드래그하여 컬럼 너비 조절"
+                      title="드래그: 너비 조절 · 더블클릭: 콘텐츠에 맞춤"
                     >
                       <div className="absolute right-0 top-1/2 h-3/5 w-px -translate-y-1/2 bg-border transition-colors group-hover:w-1 group-hover:bg-primary" />
                     </div>
