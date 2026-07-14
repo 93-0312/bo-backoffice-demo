@@ -1,4 +1,12 @@
-import type { CSSProperties, ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import {
   Table,
   TableHeader,
@@ -28,6 +36,9 @@ import { cn } from "@/shared/lib";
  *    전체선택/부분선택이다.
  *  - 넓은 표: `stickyHeader`+`maxHeight` 로 헤더 고정 세로 스크롤을, Column.fixed
  *    로 좌/우 컬럼 고정을 켠다(고정 컬럼은 Column.width 로 폭을 알려줘야 정렬됨).
+ *  - 컬럼 폭은 헤더 우측 경계를 드래그해 조절할 수 있다(내부 state, 세션 한정 —
+ *    새로고침하면 Column.width 로 되돌아간다). 고정 컬럼을 리사이즈하면 이어지는
+ *    고정 컬럼들의 sticky offset 도 함께 재계산된다.
  */
 export type SortDirection = "asc" | "desc";
 
@@ -48,7 +59,7 @@ export interface Column<T> {
   sortKey?: string;
   /** 클라이언트 정렬(applySort)이 쓸 비교값. 없으면 서버 정렬 전용으로 본다. */
   sortAccessor?: (row: T) => string | number | null | undefined;
-  /** 컬럼 폭(px). 고정 컬럼(fixed)은 오프셋 계산을 위해 반드시 지정해야 한다. */
+  /** 컬럼 폭(px) 초기값 — 사용자가 드래그로 조절 가능. 고정 컬럼(fixed)은 오프셋 계산을 위해 반드시 지정해야 한다. */
   width?: number;
   /** 가로 스크롤 시 좌/우로 고정. offset 은 width 로 자동 계산. */
   fixed?: "left" | "right";
@@ -86,6 +97,9 @@ const alignClass = {
 /** 선택 체크박스 컬럼 폭(px) — w-10. 좌측 고정 오프셋 계산의 시작점. */
 const SELECT_COL_W = 40;
 
+/** 드래그 리사이즈 시 컬럼이 줄어들 수 있는 최소 폭(px). */
+const MIN_COL_WIDTH = 60;
+
 type FixedInfo = { side: "left" | "right"; offset: number };
 
 /**
@@ -95,20 +109,21 @@ type FixedInfo = { side: "left" | "right"; offset: number };
 function getFixedInfos<T>(
   columns: Column<T>[],
   selectionFixed: boolean,
+  getWidth: (index: number) => number | undefined,
 ): (FixedInfo | undefined)[] {
   const infos: (FixedInfo | undefined)[] = columns.map(() => undefined);
   let left = selectionFixed ? SELECT_COL_W : 0;
   columns.forEach((c, i) => {
     if (c.fixed === "left") {
       infos[i] = { side: "left", offset: left };
-      left += c.width ?? 0;
+      left += getWidth(i) ?? 0;
     }
   });
   let right = 0;
   for (let i = columns.length - 1; i >= 0; i--) {
     if (columns[i].fixed === "right") {
       infos[i] = { side: "right", offset: right };
-      right += columns[i].width ?? 0;
+      right += getWidth(i) ?? 0;
     }
   }
   return infos;
@@ -177,24 +192,85 @@ export function DataTable<T>({
   const someChecked = selectedOnPage.length > 0 && !allChecked;
   const colCount = columns.length + (selecting ? 1 : 0);
 
+  // 컬럼 폭(px) — 초기값은 Column.width, 드래그로 리사이즈하면 여기 반영된다.
+  const [colWidths, setColWidths] = useState<(number | undefined)[]>(() =>
+    columns.map((c) => c.width),
+  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- 컬럼 개수가 바뀔 때만(다른 컬럼 셋) 리셋
+  useEffect(() => {
+    setColWidths(columns.map((c) => c.width));
+  }, [columns.length]);
+
+  const thRefs = useRef<(HTMLTableCellElement | null)[]>([]);
+  const resizingRef = useRef<{
+    index: number;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    const r = resizingRef.current;
+    if (!r) return;
+    const next = Math.max(MIN_COL_WIDTH, r.startWidth + (e.clientX - r.startX));
+    setColWidths((prev) => {
+      const next2 = [...prev];
+      next2[r.index] = next;
+      return next2;
+    });
+  }, []);
+
+  const handleResizeEnd = useCallback(() => {
+    resizingRef.current = null;
+    document.body.style.cursor = "";
+    document.removeEventListener("mousemove", handleResizeMove);
+    document.removeEventListener("mouseup", handleResizeEnd);
+  }, [handleResizeMove]);
+
+  const handleResizeStart = useCallback(
+    (e: ReactMouseEvent<HTMLDivElement>, index: number) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startWidth =
+        colWidths[index] ?? thRefs.current[index]?.offsetWidth ?? 150;
+      resizingRef.current = { index, startX: e.clientX, startWidth };
+      document.body.style.cursor = "col-resize";
+      document.addEventListener("mousemove", handleResizeMove);
+      document.addEventListener("mouseup", handleResizeEnd);
+    },
+    [colWidths, handleResizeMove, handleResizeEnd],
+  );
+
+  // 언마운트 시 드래그 도중이었다면 전역 리스너 정리.
+  useEffect(() => {
+    return () => {
+      document.removeEventListener("mousemove", handleResizeMove);
+      document.removeEventListener("mouseup", handleResizeEnd);
+    };
+  }, [handleResizeMove, handleResizeEnd]);
+
   // 고정 컬럼: 선택 컬럼도 좌측 고정이 하나라도 있으면 함께 왼쪽에 붙인다.
   const selectionFixed = selecting && columns.some((c) => c.fixed === "left");
-  const fixedInfos = getFixedInfos(columns, selectionFixed);
+  const fixedInfos = getFixedInfos(
+    columns,
+    selectionFixed,
+    (i) => colWidths[i],
+  );
 
   /** 컬럼 셀(th/td)의 인라인 style — width/고정 위치/z-index 를 합친다. */
   const cellStyle = (
-    col: Column<T>,
+    index: number,
     info: FixedInfo | undefined,
     header: boolean,
   ): CSSProperties | undefined => {
+    const width = colWidths[index];
     const style: CSSProperties = {};
-    if (col.width != null) style.width = col.width;
+    if (width != null) style.width = width;
     if (info) {
       style.position = "sticky";
       style[info.side] = info.offset;
       // 고정 컬럼은 폭을 못박아야 오프셋 계산과 어긋나지 않는다.
-      style.minWidth = col.width;
-      style.maxWidth = col.width;
+      style.minWidth = width;
+      style.maxWidth = width;
       style.zIndex = header ? 30 : 10; // 헤더+고정(코너)이 가장 위
     }
     if (header && stickyHeader) {
@@ -288,6 +364,9 @@ export function DataTable<T>({
                 return (
                   <TableHead
                     key={i}
+                    ref={(el) => {
+                      thRefs.current[i] = el;
+                    }}
                     aria-sort={
                       active
                         ? sort!.direction === "asc"
@@ -295,9 +374,9 @@ export function DataTable<T>({
                           : "descending"
                         : undefined
                     }
-                    style={cellStyle(col, info, true)}
+                    style={cellStyle(i, info, true)}
                     className={cn(
-                      "whitespace-nowrap",
+                      "relative whitespace-nowrap",
                       col.align && alignClass[col.align],
                       fixedClass(info, true),
                       col.className,
@@ -323,6 +402,13 @@ export function DataTable<T>({
                     ) : (
                       col.header
                     )}
+                    <div
+                      onMouseDown={(e) => handleResizeStart(e, i)}
+                      className="absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize touch-none select-none hover:bg-primary/50 active:bg-primary"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label={`${col.header} 컬럼 너비 조절`}
+                    />
                   </TableHead>
                 );
               })}
@@ -374,7 +460,7 @@ export function DataTable<T>({
                       return (
                         <TableCell
                           key={i}
-                          style={cellStyle(col, info, false)}
+                          style={cellStyle(i, info, false)}
                           className={cn(
                             "whitespace-nowrap",
                             col.align && alignClass[col.align],
