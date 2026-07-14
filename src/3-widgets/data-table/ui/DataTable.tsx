@@ -125,6 +125,17 @@ const MIN_COL_WIDTH = 32;
 type FixedInfo = { side: "left" | "right"; offset: number };
 
 /**
+ * 고정 컬럼 구분선 — border 대신 box-shadow 로 그린다.
+ * 표가 border-collapse: collapse 라, sticky 셀의 border 는 옆 셀과 공유돼 가로 스크롤 시
+ * 스크롤되는 쪽을 따라가 "사라져" 보인다. box-shadow 는 셀 자체 레이어에 그려져
+ * sticky 셀과 함께 움직이므로 스크롤해도 유지된다(색은 Tailwind border 토큰과 동일).
+ */
+const FIXED_DIVIDER_SHADOW = {
+  left: "inset -1px 0 0 0 rgb(var(--border) / 0.08)",
+  right: "inset 1px 0 0 0 rgb(var(--border) / 0.08)",
+} as const;
+
+/**
  * 고정 컬럼별 sticky 오프셋을 미리 계산한다.
  * 좌측 고정은 앞선 고정 컬럼 폭의 누적(+선택 컬럼)이, 우측 고정은 뒤쪽부터의 누적이 offset.
  */
@@ -389,6 +400,7 @@ export function DataTable<T>({
       style.position = "sticky";
       style[info.side] = info.offset;
       style.zIndex = header ? 30 : 10; // 헤더+고정(코너)이 가장 위
+      style.boxShadow = FIXED_DIVIDER_SHADOW[info.side]; // 스크롤에도 유지되는 구분선
     }
     if (header && stickyHeader) {
       style.position = "sticky";
@@ -404,11 +416,7 @@ export function DataTable<T>({
    * 똑같이 보이도록 `bg-card`(라이트=흰색·다크=카드색)를 쓴다 — 별도 색으로 뜨지 않음.
    */
   const fixedClass = (info: FixedInfo | undefined, header: boolean) =>
-    cn(
-      (info || (header && stickyHeader)) && "bg-card",
-      info?.side === "left" && "border-r border-border",
-      info?.side === "right" && "border-l border-border",
-    );
+    cn((info || (header && stickyHeader)) && "bg-card");
 
   /** 선택 컬럼(체크박스)용 style/class — 좌측 고정 + 스티키 헤더 조합 처리. */
   const selCellStyle = (header: boolean): CSSProperties | undefined => {
@@ -417,6 +425,7 @@ export function DataTable<T>({
       style.position = "sticky";
       style.left = 0;
       style.zIndex = header && stickyHeader ? 30 : 10;
+      style.boxShadow = FIXED_DIVIDER_SHADOW.left; // 스크롤에도 유지되는 구분선
     }
     if (header && stickyHeader) {
       style.position = "sticky";
@@ -426,11 +435,7 @@ export function DataTable<T>({
     return Object.keys(style).length ? style : undefined;
   };
   const selCellClass = (header: boolean) =>
-    cn(
-      "w-10",
-      (selectionFixed || (header && stickyHeader)) && "bg-card",
-      selectionFixed && "border-r border-border",
-    );
+    cn("w-10", (selectionFixed || (header && stickyHeader)) && "bg-card");
 
   const toggleAll = () => {
     if (!onSelectionChange) return;
