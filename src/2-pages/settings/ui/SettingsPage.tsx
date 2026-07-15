@@ -64,6 +64,7 @@ import {
 } from "@/shared/ui";
 import { getInitials } from "@/shared/lib";
 import { useTheme, type Theme } from "@/shared/theme";
+import { ApiError, boJson, boSession, hasBoSession } from "@/shared/api";
 import { __resetUsers } from "@/entities/user";
 import { __resetOrders } from "@/entities/order";
 import { PageHeader } from "@/widgets/page-header";
@@ -121,6 +122,20 @@ export function SettingsPage() {
               <Alert type="success" title={resetMsg} className="max-w-xl" />
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* 1.5) 세션 만료(401) 전역 처리 테스트 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>세션 만료 처리 테스트</CardTitle>
+          <CardDescription>
+            만료된 토큰을 심고 실서버를 호출해, 전역 만료 처리(토큰 폐기 → 로그인 이동 + 안내)를
+            트리거합니다. 백엔드는 무효 토큰에 400 + code 1000(Invalid token)을 반환합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SessionExpiryTester />
         </CardContent>
       </Card>
 
@@ -386,6 +401,57 @@ export function SettingsPage() {
  * OverlayShowcase — 포털로 띄우는 오버레이 컴포넌트들의 인터랙티브 데모.
  * 각 버튼이 해당 오버레이를 열고, 자체 open 상태를 관리한다(킷 컴포넌트는 모두 제어형 지원).
  */
+/**
+ * SessionExpiryTester — 전역 세션 만료 처리(shared/api 인터셉터)의 수동 테스트 장치.
+ *
+ * "만료 토큰 심기 → 실서버 호출" 을 한 버튼으로 실행한다. 정상 흐름이라면 서버가
+ * Invalid token(400/code 1000)을 주고, 인터셉터가 만료를 감지해 토큰을 지우고
+ * `/login?reason=session-expired` 로 이동시킨다(로그인 화면에 만료 안내 표시).
+ * 실서버 왕복이 필요하므로 오프라인이면 status 0 으로 끝난다(안내만 표시).
+ */
+function SessionExpiryTester() {
+  const [pending, setPending] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function trigger() {
+    setPending(true);
+    setNote(null);
+    boSession.set("EXPIRED_TEST_TOKEN");
+    try {
+      await boJson("/admin/transaction/listData", {
+        method: "POST",
+        body: JSON.stringify({ page: 1, rows: 1 }),
+      });
+      setNote("서버가 에러를 반환하지 않았습니다 — 만료 흐름이 트리거되지 않았어요.");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 0) {
+        boSession.clear(); // 테스트용 가짜 토큰 원복
+        setNote("네트워크에 연결할 수 없어 테스트를 완료하지 못했습니다(실서버 왕복 필요).");
+      } else {
+        // 정상 시나리오 — 인터셉터가 이미 로그인 이동을 시작했다(이 문구는 이동 직전 잠깐 보임).
+        setNote("만료 감지됨 — 로그인 페이지로 이동합니다…");
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-3">
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">현재 BO 세션 토큰:</span>
+        <Badge color={hasBoSession() ? "success" : "neutral"} variant="tinted">
+          {hasBoSession() ? "있음" : "없음 (mock 모드)"}
+        </Badge>
+      </div>
+      <Button variant="destructive-tinted" size="sm" disabled={pending} onClick={trigger}>
+        {pending ? "호출 중…" : "만료 토큰으로 실서버 호출 (세션 만료 트리거)"}
+      </Button>
+      {note && <Alert type="info" title={note} className="max-w-xl" />}
+    </div>
+  );
+}
+
 function OverlayShowcase() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);

@@ -7,6 +7,7 @@ export {
   boRequest,
   boJson,
   toApiError,
+  isSessionExpiredError,
   extractBearerToken,
 } from "./boClient";
 export { queryClient } from "./queryClient";

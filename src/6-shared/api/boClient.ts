@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosResponse, type Method } from "axios";
+import { ROUTES } from "@/shared/config";
 import { ApiError } from "./client";
 
 /**
@@ -59,13 +60,41 @@ boAxios.interceptors.request.use((config) => {
   return config;
 });
 
-// 응답 인터셉터 — 실패는 항상 정규화된 ApiError 로 reject
-// (단, boRequest 처럼 validateStatus 로 모든 상태를 resolve 시키는 호출은 여기 안 탐)
+/**
+ * 세션 만료(무효 토큰) 에러 판별.
+ * 표준 401 외에, 이 BO 는 만료/무효 토큰에 400 + code "1000"("Invalid token")을
+ * 주는 것이 실측으로 확인되어 둘 다 만료로 취급한다.
+ */
+export function isSessionExpiredError(error: ApiError): boolean {
+  return error.status === 401 || error.code === "1000";
+}
+
+// 만료 처리 원샷 가드 — 동시 다발 실패(재시도·병렬 쿼리)로 리다이렉트가 중복 실행되는 것 방지.
+let sessionExpiryHandled = false;
+
+/**
+ * 세션 만료 공통 처리: 토큰 폐기 → 로그인 페이지로 하드 이동(앱 상태 전체 리셋).
+ * BO 모드는 "토큰 없음 = 로그아웃"(features/auth 규칙)이라 토큰만 지우면 게이트가 막는다.
+ * 로그인 페이지는 ?reason=session-expired 를 읽어 만료 안내를 띄운다.
+ */
+function handleSessionExpiry() {
+  if (sessionExpiryHandled) return;
+  sessionExpiryHandled = true;
+  boSession.clear();
+  window.location.assign(`${ROUTES.login}?reason=session-expired`);
+}
+
+// 응답 인터셉터 — 실패는 항상 정규화된 ApiError 로 reject.
+// 세션 만료는 여기(모든 요청의 단일 관문)서 감지한다 — useQuery/useMutation/명령형 호출 전부 커버.
+// hasBoSession 가드: 로그인 시도 자체의 실패(아직 토큰 없음)에는 리다이렉트하지 않는다.
+// (boRequest 처럼 validateStatus 로 모든 상태를 resolve 시키는 호출은 여기 안 탐)
 boAxios.interceptors.response.use(
   (res) => res,
   (error: AxiosError) => {
     if (error.response) {
-      return Promise.reject(toApiError(error.response.status, error.response.data));
+      const apiError = toApiError(error.response.status, error.response.data);
+      if (hasBoSession() && isSessionExpiredError(apiError)) handleSessionExpiry();
+      return Promise.reject(apiError);
     }
     // 응답 자체가 없음(네트워크 끊김/타임아웃/취소 등) → status 0
     return Promise.reject(new ApiError(error.message || "네트워크 오류가 발생했습니다.", 0));
