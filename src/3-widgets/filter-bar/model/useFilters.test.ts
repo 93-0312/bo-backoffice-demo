@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { createElement, type ReactNode } from "react";
+import { describe, it, expect, beforeEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import {
+  useFilters,
   serializeFilters,
   parseFilters,
   type FilterValues,
@@ -71,5 +75,71 @@ describe("widgets/filter-bar · parseFilters", () => {
     const parsed = parseFilters(params, DEFAULTS);
     expect(parsed.search).toBe("abc");
     expect("reason" in parsed).toBe(false);
+  });
+});
+
+/**
+ * persist:"storage" — 새로고침(리마운트) 유지를 훅 레벨로 검증.
+ * useSearchParams 를 무조건 호출하므로 MemoryRouter 로 감싼다.
+ */
+const wrapper = ({ children }: { children: ReactNode }) =>
+  createElement(MemoryRouter, null, children);
+
+const STORAGE_DEFAULTS = { search: "", status: "" };
+const STORE_KEY = "bo-filters:test-menu";
+
+describe("widgets/filter-bar · useFilters persist:'storage'", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("값 변경이 localStorage 에 저장되고, 리마운트(새로고침) 시 복원된다", () => {
+    const first = renderHook(
+      () =>
+        useFilters({
+          defaults: STORAGE_DEFAULTS,
+          persist: "storage",
+          storageKey: "test-menu",
+        }),
+      { wrapper },
+    );
+    act(() => first.result.current.setValue("status", "SUCCESS"));
+    expect(JSON.parse(localStorage.getItem(STORE_KEY)!)).toEqual({ status: "SUCCESS" });
+    first.unmount();
+
+    // 새로고침 시뮬레이션 — 새 마운트가 저장값을 읽어온다.
+    const second = renderHook(
+      () =>
+        useFilters({
+          defaults: STORAGE_DEFAULTS,
+          persist: "storage",
+          storageKey: "test-menu",
+        }),
+      { wrapper },
+    );
+    expect(second.result.current.values.status).toBe("SUCCESS");
+  });
+
+  it("reset 하면 저장 키 자체가 지워진다(전부 기본값)", () => {
+    const { result } = renderHook(
+      () =>
+        useFilters({
+          defaults: STORAGE_DEFAULTS,
+          persist: "storage",
+          storageKey: "test-menu",
+        }),
+      { wrapper },
+    );
+    act(() => result.current.setValue("search", "abc"));
+    expect(localStorage.getItem(STORE_KEY)).not.toBeNull();
+    act(() => result.current.reset());
+    expect(localStorage.getItem(STORE_KEY)).toBeNull();
+  });
+
+  it("persist:'none' 은 아무것도 저장하지 않는다(새로고침 시 초기화)", () => {
+    const { result } = renderHook(
+      () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "none", storageKey: "test-menu" }),
+      { wrapper },
+    );
+    act(() => result.current.setValue("search", "abc"));
+    expect(localStorage.getItem(STORE_KEY)).toBeNull();
   });
 });

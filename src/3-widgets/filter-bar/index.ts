@@ -13,5 +13,6 @@ export {
   type FilterValue,
   type FilterValues,
   type DateRangeValue,
+  type FilterPersistMode,
   type UseFiltersOptions,
 } from "./model/useFilters";

@@ -149,14 +149,15 @@ export function PgTransactionsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
 
-  // 필터 상태 — URL 동기화(새로고침/공유 유지) + 검색어만 디바운스.
+  // 필터 상태 — 이 메뉴는 persist:"url"(새로고침+링크 공유 유지) + 검색어만 디바운스.
+  // 유지가 싫은 메뉴는 "none", URL 없이 유지하고 싶은 메뉴는 "storage"+storageKey.
   const { values, debouncedValues, setValue, reset, isDirty } = useFilters({
     defaults: {
       search: "",
       status: "",
       period: { from: null, to: null } as DateRangeValue,
     },
-    syncUrl: true,
+    persist: "url",
     debounceKeys: ["search"],
   });
 

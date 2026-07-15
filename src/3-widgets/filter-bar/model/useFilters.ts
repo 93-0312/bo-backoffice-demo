@@ -7,8 +7,11 @@ import { useSearchParams } from "react-router-dom";
  * FilterBar(UI)와 독립적인 "값" 관리 훅. page 는 이 훅으로 필터 상태를 소유하고,
  * FilterBar 에는 values/onChange 만 넘긴다(제어 컴포넌트 — DataTable 과 동일 철학).
  *
- *  - URL 동기화(syncUrl): 필터를 ?search=…&period.from=… 으로 반영해
- *    새로고침·뒤로가기·링크 공유에도 조회 조건이 유지된다(기본값은 URL 에서 생략).
+ *  - 유지 방식(persist)은 메뉴(페이지)마다 선택한다:
+ *      "url"     — ?search=…&period.from=… 반영. 새로고침·뒤로가기·링크 공유 유지.
+ *      "storage" — localStorage(bo-filters:<storageKey>) 저장. 새로고침엔 유지되지만
+ *                  URL 은 깨끗하고 공유는 안 됨(운영자 개인의 상용 필터에 적합).
+ *      "none"    — (기본) 컴포넌트 상태만. 새로고침하면 defaults 로 초기화.
  *  - 디바운스(debounceKeys): 검색어처럼 타이핑마다 조회하면 안 되는 키만 지연 반영.
  *    `values`(입력용 즉시값)와 `debouncedValues`(조회용)를 분리해 돌려준다.
  *  - defaults 는 마운트 시점에 고정된다(리터럴로 넘겨도 안전).
@@ -82,10 +85,21 @@ export function parseFilters<T extends FilterValues>(
   return out as T;
 }
 
+/** 새로고침 시 필터 유지 방식 — 메뉴(페이지)마다 선택한다. */
+export type FilterPersistMode = "url" | "storage" | "none";
+
+/** persist:"storage" 의 localStorage 키 접두사(테이블 storageKey 와 동일한 관례). */
+const FILTER_STORE_PREFIX = "bo-filters:";
+
 export interface UseFiltersOptions<T extends FilterValues> {
   defaults: T;
-  /** 필터를 URL 쿼리에 반영(새로고침/공유/뒤로가기 유지). 기본 false. */
-  syncUrl?: boolean;
+  /**
+   * 유지 방식: "url"(쿼리 반영 — 새로고침+공유 유지) / "storage"(localStorage —
+   * 새로고침만 유지, URL 깨끗) / "none"(기본 — 새로고침 시 초기화).
+   */
+  persist?: FilterPersistMode;
+  /** persist:"storage" 저장 키(페이지마다 고유하게). 없으면 storage 여도 저장 안 함. */
+  storageKey?: string;
   /** 이 키들만 debouncedValues 반영을 지연(검색어 등). */
   debounceKeys?: (keyof T)[];
   debounceMs?: number;
@@ -93,21 +107,34 @@ export interface UseFiltersOptions<T extends FilterValues> {
 
 export function useFilters<T extends FilterValues>({
   defaults,
-  syncUrl = false,
+  persist = "none",
+  storageKey,
   debounceKeys = [],
   debounceMs = 300,
 }: UseFiltersOptions<T>) {
   // defaults 는 마운트 시 고정 — 매 렌더 새 리터럴이 와도 초기값만 쓴다.
   const defaultsRef = useRef(defaults);
   const [searchParams, setSearchParams] = useSearchParams();
+  const storeKey = storageKey ? FILTER_STORE_PREFIX + storageKey : null;
 
-  const [values, setValues] = useState<T>(() =>
-    syncUrl ? parseFilters(searchParams, defaultsRef.current) : defaultsRef.current,
-  );
+  const [values, setValues] = useState<T>(() => {
+    const base = defaultsRef.current;
+    if (persist === "url") return parseFilters(searchParams, base);
+    if (persist === "storage" && storeKey) {
+      try {
+        const raw = localStorage.getItem(storeKey);
+        // 저장 포맷은 serializeFilters 의 평면 레코드 — URLSearchParams 로 감싸 파서를 재사용.
+        if (raw) return parseFilters(new URLSearchParams(JSON.parse(raw)), base);
+      } catch {
+        /* 손상된 저장값은 무시하고 defaults 로 */
+      }
+    }
+    return base;
+  });
 
-  // values → URL (기본값은 생략). 다른 파라미터(reason 등)는 건드리지 않는다.
+  // persist:"url" — values → URL (기본값은 생략). 다른 파라미터(reason 등)는 건드리지 않는다.
   useEffect(() => {
-    if (!syncUrl) return;
+    if (persist !== "url") return;
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -123,7 +150,19 @@ export function useFilters<T extends FilterValues>({
       },
       { replace: true },
     );
-  }, [values, syncUrl, setSearchParams]);
+  }, [values, persist, setSearchParams]);
+
+  // persist:"storage" — values → localStorage (전부 기본값이면 키 자체를 지운다).
+  useEffect(() => {
+    if (persist !== "storage" || !storeKey) return;
+    try {
+      const record = serializeFilters(values, defaultsRef.current);
+      if (Object.keys(record).length === 0) localStorage.removeItem(storeKey);
+      else localStorage.setItem(storeKey, JSON.stringify(record));
+    } catch {
+      /* 무시 */
+    }
+  }, [values, persist, storeKey]);
 
   // 디바운스 대상 키만 지연 미러링 → debouncedValues 로 합성.
   const debounceSubset = useMemo(() => {
