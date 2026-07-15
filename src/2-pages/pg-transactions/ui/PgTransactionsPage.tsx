@@ -81,8 +81,9 @@ const PARTNER_OPTIONS: SelectOption[] = [
   { value: "NICE", label: "NICE" },
   { value: "KCP", label: "KCP" },
 ];
-/** 검색어를 적용할 대상 필드(구 BO "필터" 셀렉트) */
+/** 검색어를 적용할 대상 필드(구 BO "필터" 셀렉트) — 미선택("")이면 전체 검색 */
 const SEARCH_FILTER_OPTIONS: SelectOption[] = [
+  { value: "", label: "필터" },
   { label: "가맹점ID", value: "MA.id" },
   { label: "가맹점명", value: "MA.name" },
   { label: "거래번호", value: "TD.transact_id" },
