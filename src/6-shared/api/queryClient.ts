@@ -7,7 +7,7 @@ import { QueryClient } from "@tanstack/react-query";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000, // 30초 동안 fresh — 불필요한 재조회 억제
+      staleTime: 1_000, // 1초 동안 fresh — 메뉴 재진입 시 최신 데이터를 바로 재조회
       gcTime: 5 * 60_000, // 5분 후 캐시 정리
       retry: 1,
       refetchOnWindowFocus: false,
