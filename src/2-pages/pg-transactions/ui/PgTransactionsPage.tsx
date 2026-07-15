@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Button,
-  Card,
-  Input,
-  Select,
-  IconSearch,
-  type SelectOption,
-} from "@/shared/ui";
+import { Alert, Button, Card, type SelectOption } from "@/shared/ui";
 import { ApiError } from "@/shared/api";
 import { formatNumber } from "@/shared/lib";
 import { ROUTES } from "@/shared/config";
-import { useDebouncedValue } from "@/shared/hooks";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
+import {
+  FilterBar,
+  useFilters,
+  DATE_RANGE_PRESETS,
+  type FilterDef,
+  type DateRangeValue,
+} from "@/widgets/filter-bar";
 import { Pagination } from "@/widgets/pagination";
 import {
   usePgTransactionsQuery,
@@ -127,30 +125,54 @@ const columns: Column<PgTransaction>[] = [
   },
 ];
 
+/** 필터 스키마 — FilterBar 가 이 선언대로 렌더한다(상태는 useFilters 가 소유). */
+const FILTER_DEFS: FilterDef[] = [
+  {
+    type: "search",
+    key: "search",
+    placeholder: "가맹점명 · 주문번호 · 거래번호 · 고객ID 검색",
+  },
+  { type: "select", key: "status", options: STATUS_OPTIONS },
+  {
+    type: "dateRange",
+    key: "period",
+    presets: [
+      DATE_RANGE_PRESETS.today,
+      DATE_RANGE_PRESETS.last7Days,
+      DATE_RANGE_PRESETS.thisMonth,
+    ],
+  },
+];
+
 export function PgTransactionsPage() {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const debouncedSearch = useDebouncedValue(search, 300);
+  // 필터 상태 — URL 동기화(새로고침/공유 유지) + 검색어만 디바운스.
+  const { values, debouncedValues, setValue, reset, isDirty } = useFilters({
+    defaults: {
+      search: "",
+      status: "",
+      period: { from: null, to: null } as DateRangeValue,
+    },
+    syncUrl: true,
+    debounceKeys: ["search"],
+  });
 
-  // 검색/상태/페이지 크기 변경 시 첫 페이지로 + 선택 초기화(다른 조회 결과이므로)
+  // 필터/페이지 크기 변경 시 첫 페이지로 + 선택 초기화(다른 조회 결과이므로)
   useEffect(() => {
     setPage(1);
     setSelected([]);
-  }, [debouncedSearch, status, pageSize]);
-
-  useEffect(() => {
-    // setSelected([]);
-  }, [page]);
+  }, [debouncedValues, pageSize]);
 
   // 데이터 로딩/캐싱/재조회는 TanStack Query 가 담당 (파라미터 변경 시 자동 재조회).
   // 에러도 여기서 나온다 — queryFn(boJson) 이 throw 한 ApiError 가 isError/error 로 노출됨.
   const { data, isLoading, isError, error } = usePgTransactionsQuery({
-    search: debouncedSearch,
-    result: status,
+    search: debouncedValues.search,
+    result: debouncedValues.status,
+    startDate: debouncedValues.period.from ?? undefined,
+    endDate: debouncedValues.period.to ?? undefined,
     page,
     rows: pageSize,
     locale: "ko",
@@ -173,21 +195,13 @@ export function PgTransactionsPage() {
       />
 
       <Card>
-        <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
-          <Input
-            leftIcon={<IconSearch />}
-            placeholder="가맹점명 · 주문번호 · 거래번호 · 고객ID 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            containerClassName="min-w-64 flex-1"
-          />
-          <Select
-            options={STATUS_OPTIONS}
-            value={status}
-            onValueChange={setStatus}
-            className="w-40"
-          />
-        </div>
+        <FilterBar
+          defs={FILTER_DEFS}
+          values={values}
+          onChange={setValue}
+          onReset={reset}
+          dirty={isDirty}
+        />
 
         {/* useQuery 에러 소비 예시 — 정규화된 ApiError.message(·code) 를 그대로 표시 */}
         {errorMessage && (

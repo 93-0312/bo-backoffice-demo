@@ -23,10 +23,13 @@ export async function fetchPgTransactions(
 /** 실서버 조회 — 구 BO listData 요청 body 계약을 그대로 채워 보낸다. */
 async function fetchReal(params: PgTransactionListParams): Promise<PgTransactionListResponse> {
   const { start, end } = todayRange();
+  // 서버 계약은 "YYYY-MM-DD hh:mm:ss" — 필터에서 날짜만 오면 하루 경계 시각을 붙인다.
+  const withTime = (d: string | undefined, time: string) =>
+    d && d.length === 10 ? `${d} ${time}` : d;
   const body = {
     allTime: false,
-    startDate: params.startDate ?? start,
-    endDate: params.endDate ?? end,
+    startDate: withTime(params.startDate, "00:00:00") ?? start,
+    endDate: withTime(params.endDate, "23:59:59") ?? end,
     contractDataCode: "",
     branchDataCode: "",
     type: params.type ?? "",
@@ -151,9 +154,18 @@ function todayRange(): { start: string; end: string } {
   return { start: `${y}-${m}-${d} 00:00:00`, end: `${y}-${m}-${d} 23:59:59` };
 }
 
-/** mock 조회 — 시드에 검색·상태·유형 필터 + 페이지네이션을 적용해 동일 계약으로 반환. */
+/** mock 조회 — 시드에 검색·상태·유형·기간 필터 + 페이지네이션을 적용해 동일 계약으로 반환. */
 async function fetchMock(params: PgTransactionListParams): Promise<PgTransactionListResponse> {
-  const { search = "", result = "", schemeCd = "", type = "", page, rows } = params;
+  const {
+    search = "",
+    result = "",
+    schemeCd = "",
+    type = "",
+    startDate,
+    endDate,
+    page,
+    rows,
+  } = params;
   const q = search.trim().toLowerCase();
 
   const filtered = PG_TRANSACTION_SEED.filter((t) => {
@@ -166,7 +178,12 @@ async function fetchMock(params: PgTransactionListParams): Promise<PgTransaction
     const matchStatus = !result || t.transactStatusName === result;
     const matchScheme = !schemeCd || t.transactSchemeName === schemeCd;
     const matchType = !type || t.transactTypeName === type;
-    return matchQ && matchStatus && matchScheme && matchType;
+    // 기간 필터 — transactDate("YYYY-MM-DD hh:mm:ss")의 날짜부만 문자열 비교.
+    // (실서버와 달리 mock 은 기간 미지정 시 전체를 보여준다 — 데모 self-contained 유지)
+    const day = t.transactDate.slice(0, 10);
+    const matchDate =
+      (!startDate || day >= startDate.slice(0, 10)) && (!endDate || day <= endDate.slice(0, 10));
+    return matchQ && matchStatus && matchScheme && matchType && matchDate;
   });
 
   const count = filtered.length;
