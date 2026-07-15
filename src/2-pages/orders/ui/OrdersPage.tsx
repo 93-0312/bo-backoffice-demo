@@ -3,6 +3,7 @@ import { Card, Tabs, TabsList, TabsTrigger } from "@/shared/ui";
 import { formatCurrency, formatDateTime } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, applySort, type Column, type SortState } from "@/widgets/data-table";
+import { useFilters } from "@/widgets/filter-bar";
 import { OrderStatusUpdater } from "@/features/order-status-update";
 import {
   useOrdersQuery,
@@ -28,7 +29,14 @@ const STATUS_TABS: (OrderStatus | "all")[] = [
 ];
 
 export function OrdersPage() {
-  const [status, setStatus] = useState<OrderStatus | "all">("all");
+  // 필터 UI 는 탭이지만 "값"은 useFilters 가 소유 — persist:"memory" 로
+  // 방문 탭/메뉴 재진입 시 선택한 상태가 유지되고 새로고침 시 초기화된다.
+  const { values, setValue } = useFilters({
+    defaults: { status: "all" },
+    persist: "memory",
+    storageKey: "orders",
+  });
+  const status = values.status as OrderStatus | "all";
   const [sort, setSort] = useState<SortState | null>(null);
 
   const { data, isLoading, refetch } = useOrdersQuery(status);
@@ -85,7 +93,7 @@ export function OrdersPage() {
       <Card>
         <Tabs
           value={status}
-          onValueChange={(v) => setStatus(v as OrderStatus | "all")}
+          onValueChange={(v) => setValue("status", v)}
           className="p-4 pb-0"
         >
           <TabsList>

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Card, Button, Select, Input, type SelectOption } from "@/shared/ui";
-import { useDebouncedValue } from "@/shared/hooks";
+import { Card, Button, type SelectOption } from "@/shared/ui";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
-import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
+import { DownloadButton } from "@/widgets/query-filters";
+import { FilterBar, useFilters, type FilterDef, type DateRangeValue } from "@/widgets/filter-bar";
 import {
   useSidsQuery,
   SidStatusBadge,
@@ -17,25 +17,40 @@ import {
  * SidListPage — "셀러 > 분할정산 > SID 리스트" (page).
  *
  * Figma 리스트 화면을 FSD로 조립: PageHeader(브레드크럼+다운로드) · FilterBar(날짜·상태·검색) ·
- * DataTable · Pagination. 검색/상태/날짜 필터와 페이지네이션이 실제 동작한다.
+ * DataTable · Pagination. 필터는 스키마(defs) + useFilters(memory — 재방문 유지).
  */
 const STATUS_OPTIONS: SelectOption[] = [
   { value: "all", label: "진행 상태 전체" },
   ...(Object.keys(SID_STATUS_LABEL) as SidStatus[]).map((s) => ({ value: s, label: SID_STATUS_LABEL[s] })),
 ];
-const EMPTY_RANGE: DateRange = { from: "", to: "" };
+
+const FILTER_DEFS: FilterDef[] = [
+  { type: "dateRange", key: "period" },
+  { type: "select", key: "status", options: STATUS_OPTIONS, className: "w-40" },
+  { type: "search", key: "keyword", placeholder: "MID · sellerID · 법인명 검색", className: "max-w-xs" },
+];
 
 export function SidListPage() {
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<SidStatus | "all">("all");
-  const [range, setRange] = useState<DateRange>(EMPTY_RANGE);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const debounced = useDebouncedValue(keyword, 300);
+  const { values, debouncedValues, setValue, reset, isDirty } = useFilters({
+    defaults: {
+      period: { from: null, to: null } as DateRangeValue,
+      status: "all",
+      keyword: "",
+    },
+    persist: "memory",
+    storageKey: "settlement-sids",
+    debounceKeys: ["keyword"],
+  });
 
-  const { data, isLoading } = useSidsQuery({ keyword: debounced, status });
+  const { data, isLoading } = useSidsQuery({
+    keyword: debouncedValues.keyword,
+    status: debouncedValues.status as SidStatus | "all",
+  });
 
   // 날짜 범위는 클라이언트에서 최초접수일 기준으로 거른다.
+  const range = debouncedValues.period;
   const filtered = useMemo(() => {
     const list: Sid[] = data ?? [];
     return list.filter(
@@ -43,7 +58,7 @@ export function SidListPage() {
     );
   }, [data, range]);
 
-  useEffect(() => setPage(1), [debounced, status, range, pageSize]);
+  useEffect(() => setPage(1), [debouncedValues, pageSize]);
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
   const startNo = (page - 1) * pageSize;
@@ -70,12 +85,6 @@ export function SidListPage() {
     },
   ];
 
-  function reset() {
-    setKeyword("");
-    setStatus("all");
-    setRange(EMPTY_RANGE);
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -84,16 +93,14 @@ export function SidListPage() {
         actions={<DownloadButton />}
       />
       <Card>
-        <FilterBar onReset={reset} note="진행 상태가 '승인'인 건만 MID 생성이 가능합니다.">
-          <DateRangeField value={range} onChange={setRange} />
-          <Select options={STATUS_OPTIONS} value={status} onValueChange={(v) => setStatus(v as SidStatus | "all")} className="w-40" />
-          <Input
-            placeholder="MID · sellerID · 법인명 검색"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            containerClassName="w-full max-w-xs"
-          />
-        </FilterBar>
+        <FilterBar
+          defs={FILTER_DEFS}
+          values={values}
+          onChange={setValue}
+          onReset={reset}
+          dirty={isDirty}
+          note="진행 상태가 '승인'인 건만 MID 생성이 가능합니다."
+        />
         <DataTable
           storageKey="settlement-sids"
           columns={columns}

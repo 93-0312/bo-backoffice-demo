@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Select, Input, Checkbox, Label, type SelectOption } from "@/shared/ui";
-import { useDebouncedValue } from "@/shared/hooks";
+import { Card, type SelectOption } from "@/shared/ui";
 import { formatNumber } from "@/shared/lib";
 import { ROUTES } from "@/shared/config";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
-import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
+import { DownloadButton } from "@/widgets/query-filters";
+import { FilterBar, useFilters, type FilterDef, type DateRangeValue } from "@/widgets/filter-bar";
 import {
   useSellerTransactionsQuery,
   SellerTxTypeBadge,
@@ -21,7 +21,7 @@ import {
 
 /**
  * SellerTransactionsPage — "셀러 > 분할정산 > 거래내역" (page).
- * STID 단위 셀러 거래내역. '페이버스 결제 제외' 토글·유형/상태 필터가 동작한다.
+ * STID 단위 셀러 거래내역. 필터는 스키마(defs) + useFilters(memory — 재방문 유지).
  */
 const TYPE_OPTIONS: SelectOption[] = [
   { value: "all", label: "거래 유형 전체" },
@@ -31,27 +31,40 @@ const STATE_OPTIONS: SelectOption[] = [
   { value: "all", label: "거래 상태 전체" },
   ...(Object.keys(SELLER_TX_STATE_LABEL) as SellerTxState[]).map((s) => ({ value: s, label: SELLER_TX_STATE_LABEL[s] })),
 ];
-const EMPTY_RANGE: DateRange = { from: "", to: "" };
+
+const FILTER_DEFS: FilterDef[] = [
+  { type: "dateRange", key: "period" },
+  { type: "select", key: "type", options: TYPE_OPTIONS, className: "w-36" },
+  { type: "select", key: "state", options: STATE_OPTIONS, className: "w-36" },
+  { type: "search", key: "keyword", placeholder: "STID · SID · 셀러명 · TID 검색", className: "max-w-xs" },
+  { type: "checkbox", key: "excludePayverse", label: "페이버스 결제 제외" },
+];
 
 export function SellerTransactionsPage() {
-  const [keyword, setKeyword] = useState("");
-  const [type, setType] = useState<SellerTxType | "all">("all");
-  const [state, setState] = useState<SellerTxState | "all">("all");
-  const [excludePayverse, setExcludePayverse] = useState(false);
-  const [range, setRange] = useState<DateRange>(EMPTY_RANGE);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const debounced = useDebouncedValue(keyword, 300);
   const navigate = useNavigate();
-
-  const { data, isLoading } = useSellerTransactionsQuery({
-    keyword: debounced,
-    type,
-    state,
-    excludePayverse,
+  const { values, debouncedValues, setValue, reset, isDirty } = useFilters({
+    defaults: {
+      period: { from: null, to: null } as DateRangeValue,
+      type: "all",
+      state: "all",
+      keyword: "",
+      excludePayverse: false,
+    },
+    persist: "memory",
+    storageKey: "settlement-seller-transactions",
+    debounceKeys: ["keyword"],
   });
 
-  useEffect(() => setPage(1), [debounced, type, state, excludePayverse, range, pageSize]);
+  const { data, isLoading } = useSellerTransactionsQuery({
+    keyword: debouncedValues.keyword,
+    type: debouncedValues.type as SellerTxType | "all",
+    state: debouncedValues.state as SellerTxState | "all",
+    excludePayverse: debouncedValues.excludePayverse,
+  });
+
+  useEffect(() => setPage(1), [debouncedValues, pageSize]);
 
   const list: SellerTransaction[] = data ?? [];
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
@@ -74,14 +87,6 @@ export function SellerTransactionsPage() {
     { header: "금액", align: "right", cell: (t) => <span className="text-sm font-medium tabular-nums">{formatNumber(t.amount)}.00</span> },
   ];
 
-  function reset() {
-    setKeyword("");
-    setType("all");
-    setState("all");
-    setExcludePayverse(false);
-    setRange(EMPTY_RANGE);
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -90,21 +95,14 @@ export function SellerTransactionsPage() {
         actions={<DownloadButton />}
       />
       <Card>
-        <FilterBar onReset={reset} note="최대 검색가능 기간: 1개월">
-          <DateRangeField value={range} onChange={setRange} />
-          <Select options={TYPE_OPTIONS} value={type} onValueChange={(v) => setType(v as SellerTxType | "all")} className="w-36" />
-          <Select options={STATE_OPTIONS} value={state} onValueChange={(v) => setState(v as SellerTxState | "all")} className="w-36" />
-          <Input
-            placeholder="STID · SID · 셀러명 · TID 검색"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            containerClassName="w-full max-w-xs"
-          />
-          <label className="flex cursor-pointer items-center gap-2">
-            <Checkbox checked={excludePayverse} onCheckedChange={setExcludePayverse} />
-            <Label className="cursor-pointer">페이버스 결제 제외</Label>
-          </label>
-        </FilterBar>
+        <FilterBar
+          defs={FILTER_DEFS}
+          values={values}
+          onChange={setValue}
+          onReset={reset}
+          dirty={isDirty}
+          note="최대 검색가능 기간: 1개월"
+        />
         <DataTable
           storageKey="settlement-seller-transactions"
           columns={columns}

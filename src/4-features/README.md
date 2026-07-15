@@ -9,7 +9,6 @@
 |---|---|---|
 | `auth` | 로그인/로그아웃 + 세션 컨텍스트 | (데모 인증) |
 | `theme-toggle` | 다크모드 전환 | `shared/theme` |
-| `user-filter` | 사용자 검색·필터 | (제어 컴포넌트, 상태는 page 소유) |
 | `user-create` | 사용자 추가 (모달 폼) | `entities/user.createUser` |
 | `user-delete` | 사용자 삭제 (확인 모달) | `entities/user.deleteUser` |
 | `order-status-update` | 주문 상태 변경 | `entities/order.updateOrderStatus` + 전이 규칙 |
@@ -19,8 +18,9 @@
   실제 생성은 `entities/user` 에 넘깁니다. (행위 ↔ 도메인의 분리)
 - **규칙 기반 UI**: `OrderStatusUpdater` 는 `nextStatuses(order.status)` 로 "지금 갈 수 있는
   다음 상태"만 버튼으로 노출합니다. 규칙의 출처는 entities.
-- **제어 컴포넌트 패턴**: `user-filter` 는 상태를 갖지 않고 `value`/`onChange` 만 받습니다.
-  상태 소유는 page → 재사용성과 테스트성이 올라갑니다.
+- **제어 컴포넌트 패턴**: 필터처럼 "값을 보여주고 변경을 emit" 하는 UI 는 상태를 갖지 않습니다.
+  상태 소유는 page(useFilters) → 재사용성과 테스트성이 올라갑니다.
+  (과거 `user-filter` feature 는 스키마 기반 `widgets/filter-bar` 로 일반화되어 제거됨.)
 
 ## import 방향
 - ✅ `features → entities`, `features → shared`

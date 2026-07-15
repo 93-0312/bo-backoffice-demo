@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Card, Select, Input, type SelectOption } from "@/shared/ui";
-import { useDebouncedValue } from "@/shared/hooks";
+import { Card, type SelectOption } from "@/shared/ui";
 import { formatNumber } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, type Column } from "@/widgets/data-table";
 import { Pagination } from "@/widgets/pagination";
-import { FilterBar, DownloadButton, DateRangeField, type DateRange } from "@/widgets/query-filters";
+import { DownloadButton } from "@/widgets/query-filters";
+import { FilterBar, useFilters, type FilterDef, type DateRangeValue } from "@/widgets/filter-bar";
 import {
   useSettlementsQuery,
   MerchantStatusBadge,
@@ -29,19 +29,42 @@ const STATE_OPTIONS: SelectOption[] = [
     label: SETTLEMENT_STATE_LABEL[s],
   })),
 ];
-const EMPTY_RANGE: DateRange = { from: "", to: "" };
+
+/** 검색 placeholder 만 sme 여부에 따라 달라 defs 를 함수로 만든다. */
+const filterDefs = (sme: boolean): FilterDef[] => [
+  { type: "dateRange", key: "period" },
+  { type: "select", key: "state", options: STATE_OPTIONS, className: "w-36" },
+  {
+    type: "search",
+    key: "keyword",
+    placeholder: sme ? "MID · 가맹점명 · 그룹ID 검색" : "MID · 가맹점명 검색",
+    className: "max-w-xs",
+  },
+];
 
 export function SettlementListPage({ sme = false }: { sme?: boolean }) {
-  const [keyword, setKeyword] = useState("");
-  const [state, setState] = useState<SettlementState | "all">("all");
-  const [range, setRange] = useState<DateRange>(EMPTY_RANGE);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const debounced = useDebouncedValue(keyword, 300);
+  // 두 라우트(정산 리스트/영중소)가 같은 컴포넌트라 저장 키를 분리한다
+  // (라우트 element 에 key 를 줘 전환 시 리마운트 — AppRoutes 참고).
+  const { values, debouncedValues, setValue, reset, isDirty } = useFilters({
+    defaults: {
+      period: { from: null, to: null } as DateRangeValue,
+      state: "all",
+      keyword: "",
+    },
+    persist: "memory",
+    storageKey: sme ? "settlement-sme" : "settlement-list",
+    debounceKeys: ["keyword"],
+  });
 
-  const { data, isLoading } = useSettlementsQuery({ keyword: debounced, state, sme });
+  const { data, isLoading } = useSettlementsQuery({
+    keyword: debouncedValues.keyword,
+    state: debouncedValues.state as SettlementState | "all",
+    sme,
+  });
 
-  useEffect(() => setPage(1), [debounced, state, range, pageSize, sme]);
+  useEffect(() => setPage(1), [debouncedValues, pageSize, sme]);
 
   const list: Settlement[] = data ?? [];
   const paged = list.slice((page - 1) * pageSize, page * pageSize);
@@ -78,12 +101,6 @@ export function SettlementListPage({ sme = false }: { sme?: boolean }) {
     },
   ];
 
-  function reset() {
-    setKeyword("");
-    setState("all");
-    setRange(EMPTY_RANGE);
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -93,18 +110,13 @@ export function SettlementListPage({ sme = false }: { sme?: boolean }) {
       />
       <Card>
         <FilterBar
+          defs={filterDefs(sme)}
+          values={values}
+          onChange={setValue}
           onReset={reset}
+          dirty={isDirty}
           note={sme ? "정산지급일 기준 최대 12개월 조회 가능합니다." : "최대 검색가능 기간: 12개월"}
-        >
-          <DateRangeField value={range} onChange={setRange} />
-          <Select options={STATE_OPTIONS} value={state} onValueChange={(v) => setState(v as SettlementState | "all")} className="w-36" />
-          <Input
-            placeholder={sme ? "MID · 가맹점명 · 그룹ID 검색" : "MID · 가맹점명 검색"}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            containerClassName="w-full max-w-xs"
-          />
-        </FilterBar>
+        />
         <DataTable
           storageKey="settlement-list"
           columns={columns}

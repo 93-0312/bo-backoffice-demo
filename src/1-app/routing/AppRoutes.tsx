@@ -51,8 +51,9 @@ export function AppRoutes() {
         <Route path={ROUTES.sidList} element={<SidListPage />} />
         <Route path={ROUTES.sellerTransactions} element={<SellerTransactionsPage />} />
         <Route path={ROUTES.sellerTransactionDetail()} element={<SellerTransactionDetailPage />} />
-        <Route path={ROUTES.settlementList} element={<SettlementListPage />} />
-        <Route path={ROUTES.smeSettlements} element={<SettlementListPage sme />} />
+        {/* 같은 컴포넌트를 두 라우트가 쓰므로 key 로 전환 시 리마운트(필터 저장 키 분리) */}
+        <Route path={ROUTES.settlementList} element={<SettlementListPage key="list" />} />
+        <Route path={ROUTES.smeSettlements} element={<SettlementListPage key="sme" sme />} />
         <Route path={ROUTES.settings} element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

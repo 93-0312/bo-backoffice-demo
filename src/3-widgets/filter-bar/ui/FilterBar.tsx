@@ -42,6 +42,8 @@ export interface FilterBarProps<T extends FilterValues> {
   /** 있으면 값이 기본값과 다를 때(dirty) 우측에 "초기화" 버튼을 띄운다. */
   onReset?: () => void;
   dirty?: boolean;
+  /** 우측에 항상 표시하는 안내 문구. 예: "최대 검색가능 기간: 1개월" */
+  note?: string;
   className?: string;
 }
 
@@ -87,6 +89,7 @@ export function FilterBar<T extends FilterValues>({
   onChange,
   onReset,
   dirty,
+  note,
   className,
 }: FilterBarProps<T>) {
   const set = (key: string, value: FilterValue) =>
@@ -191,8 +194,9 @@ export function FilterBar<T extends FilterValues>({
             return <div key={def.key}>{def.render(value, (v) => set(def.key, v))}</div>;
         }
       })}
+      {note && <span className="ml-auto text-xs text-muted-foreground">{note}</span>}
       {onReset && dirty && (
-        <Button variant="ghost" size="sm" className="ml-auto" onClick={onReset}>
+        <Button variant="ghost" size="sm" className={note ? undefined : "ml-auto"} onClick={onReset}>
           초기화
         </Button>
       )}

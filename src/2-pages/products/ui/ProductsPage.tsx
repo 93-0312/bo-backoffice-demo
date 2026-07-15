@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { Card, Input, Select, IconSearch, type SelectOption } from "@/shared/ui";
-import { useDebouncedValue } from "@/shared/hooks";
+import { Card, type SelectOption } from "@/shared/ui";
 import { formatCurrency } from "@/shared/lib";
 import { PageHeader } from "@/widgets/page-header";
 import { DataTable, applySort, type Column, type SortState } from "@/widgets/data-table";
+import { FilterBar, useFilters, type FilterDef } from "@/widgets/filter-bar";
 import {
   useProductsQuery,
   ProductStatusBadge,
@@ -15,7 +15,7 @@ import {
 
 /**
  * ProductsPage — 라우트 `/products` (page).
- * 검색(shared Input) + 카테고리 필터를 직접 들고, entities/product 표현을 테이블에 조립.
+ * 필터는 스키마(defs) 선언 + useFilters(memory — 재방문 유지, 새로고침 초기화).
  */
 const CATEGORY_OPTIONS: SelectOption[] = [
   { value: "all", label: "카테고리 전체" },
@@ -25,13 +25,24 @@ const CATEGORY_OPTIONS: SelectOption[] = [
   })),
 ];
 
-export function ProductsPage() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<ProductCategory | "all">("all");
-  const [sort, setSort] = useState<SortState | null>(null);
-  const debounced = useDebouncedValue(search, 300);
+const FILTER_DEFS: FilterDef[] = [
+  { type: "search", key: "search", placeholder: "상품명 또는 SKU 검색", className: "max-w-xs" },
+  { type: "select", key: "category", options: CATEGORY_OPTIONS, className: "w-40" },
+];
 
-  const { data, isLoading } = useProductsQuery({ search: debounced, category });
+export function ProductsPage() {
+  const [sort, setSort] = useState<SortState | null>(null);
+  const { values, debouncedValues, setValue, reset, isDirty } = useFilters({
+    defaults: { search: "", category: "all" },
+    persist: "memory",
+    storageKey: "products",
+    debounceKeys: ["search"],
+  });
+
+  const { data, isLoading } = useProductsQuery({
+    search: debouncedValues.search,
+    category: debouncedValues.category as ProductCategory | "all",
+  });
   const products = data ?? [];
 
   const columns: Column<Product>[] = [
@@ -73,21 +84,13 @@ export function ProductsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="상품" description="판매 상품의 재고와 상태를 확인합니다." />
       <Card>
-        <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-          <Input
-            leftIcon={<IconSearch />}
-            placeholder="상품명 또는 SKU 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            containerClassName="w-full max-w-xs"
-          />
-          <Select
-            options={CATEGORY_OPTIONS}
-            value={category}
-            onValueChange={(v) => setCategory(v as ProductCategory | "all")}
-            className="w-40"
-          />
-        </div>
+        <FilterBar
+          defs={FILTER_DEFS}
+          values={values}
+          onChange={setValue}
+          onReset={reset}
+          dirty={isDirty}
+        />
         <DataTable
           storageKey="products"
           columns={columns}
