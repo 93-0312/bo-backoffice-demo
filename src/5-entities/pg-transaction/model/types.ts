@@ -39,20 +39,38 @@ export interface PgTransaction {
 }
 
 /**
- * 거래내역 조회 요청 파라미터(구 BO 계약의 실사용 부분집합).
- * 실제 API 는 startDate/endDate/각종 필터 코드까지 받지만, 데모에서 쓰는 것만 노출한다.
+ * 거래내역 조회 요청 파라미터 — 구 BO listData body 계약 전체.
+ * 필드명은 서버 계약 그대로(page 쪽 필터 키와의 매핑은 page 가 담당).
  */
 export interface PgTransactionListParams {
+  /** true 면 기간 조건 없이 전체 조회(구 BO "일자 해제" 체크박스) */
+  allTime?: boolean;
   startDate?: string;
   endDate?: string;
+  /** 계약법인 코드 */
+  contractDataCode?: string;
+  /** 영업법인 코드 */
+  branchDataCode?: string;
   /** 거래유형 (SALE/REFUND ...) */
   type?: string;
   /** 상태 필터 (SUCCESS/PENDING ...) — 서버 파라미터명은 result */
   result?: string;
   /** 결제수단(scheme) 필터 */
   schemeCd?: string;
+  /** 거래환경 (PC/MOBILE ...) */
+  environmentType?: string;
+  /** 프로세서(파트너) 코드 */
+  partnerCd?: string;
+  /** 통화 코드 (USD/KRW ...) */
+  currencyCode?: string;
+  /** 검색어를 적용할 대상 필드(구 BO "필터" 셀렉트) */
+  filter?: string;
   /** 통합 검색(가맹점명·주문번호·거래번호·고객ID) */
   search?: string;
+  /** UTC 오프셋(시간) — 서버 계약은 문자열, 기본 "9"(KST) */
+  timeZone?: string;
+  excludePayverse?: boolean;
+  excludePaypalReferral?: boolean;
   page: number; // 1-based
   rows: number; // 페이지 크기
   locale?: string;

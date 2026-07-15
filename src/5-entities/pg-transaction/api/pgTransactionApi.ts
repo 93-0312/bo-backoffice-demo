@@ -27,22 +27,22 @@ async function fetchReal(params: PgTransactionListParams): Promise<PgTransaction
   const withTime = (d: string | undefined, time: string) =>
     d && d.length === 10 ? `${d} ${time}` : d;
   const body = {
-    allTime: false,
+    allTime: params.allTime ?? false,
     startDate: withTime(params.startDate, "00:00:00") ?? start,
     endDate: withTime(params.endDate, "23:59:59") ?? end,
-    contractDataCode: "",
-    branchDataCode: "",
+    contractDataCode: params.contractDataCode ?? "",
+    branchDataCode: params.branchDataCode ?? "",
     type: params.type ?? "",
     result: params.result ?? "",
     schemeCd: params.schemeCd ?? "",
-    environmentType: "",
-    partnerCd: "",
-    currencyCode: "",
-    filter: "",
+    environmentType: params.environmentType ?? "",
+    partnerCd: params.partnerCd ?? "",
+    currencyCode: params.currencyCode ?? "",
+    filter: params.filter ?? "",
     search: params.search ?? "",
-    timeZone: "9",
-    excludePayverse: false,
-    excludePaypalReferral: false,
+    timeZone: params.timeZone ?? "9",
+    excludePayverse: params.excludePayverse ?? false,
+    excludePaypalReferral: params.excludePaypalReferral ?? false,
     page: params.page,
     rows: params.rows,
     locale: params.locale ?? "ko",
@@ -154,13 +154,19 @@ function todayRange(): { start: string; end: string } {
   return { start: `${y}-${m}-${d} 00:00:00`, end: `${y}-${m}-${d} 23:59:59` };
 }
 
-/** mock 조회 — 시드에 검색·상태·유형·기간 필터 + 페이지네이션을 적용해 동일 계약으로 반환. */
+/**
+ * mock 조회 — 시드에 검색·상태·유형·결제수단·통화·기간 필터 + 페이지네이션을 적용해
+ * 동일 계약으로 반환. 시드에 대응 필드가 없는 파라미터(법인·거래환경·프로세서·filter·
+ * timeZone·exclude 류)는 mock 에선 무시된다(실서버 전용).
+ */
 async function fetchMock(params: PgTransactionListParams): Promise<PgTransactionListResponse> {
   const {
     search = "",
     result = "",
     schemeCd = "",
     type = "",
+    currencyCode = "",
+    allTime = false,
     startDate,
     endDate,
     page,
@@ -178,12 +184,16 @@ async function fetchMock(params: PgTransactionListParams): Promise<PgTransaction
     const matchStatus = !result || t.transactStatusName === result;
     const matchScheme = !schemeCd || t.transactSchemeName === schemeCd;
     const matchType = !type || t.transactTypeName === type;
+    const matchCurrency = !currencyCode || t.transactProcessCurrency === currencyCode;
     // 기간 필터 — transactDate("YYYY-MM-DD hh:mm:ss")의 날짜부만 문자열 비교.
+    // allTime(일자 해제)이면 기간 조건을 통째로 건너뛴다.
     // (실서버와 달리 mock 은 기간 미지정 시 전체를 보여준다 — 데모 self-contained 유지)
     const day = t.transactDate.slice(0, 10);
     const matchDate =
-      (!startDate || day >= startDate.slice(0, 10)) && (!endDate || day <= endDate.slice(0, 10));
-    return matchQ && matchStatus && matchScheme && matchType && matchDate;
+      allTime ||
+      ((!startDate || day >= startDate.slice(0, 10)) &&
+        (!endDate || day <= endDate.slice(0, 10)));
+    return matchQ && matchStatus && matchScheme && matchType && matchCurrency && matchDate;
   });
 
   const count = filtered.length;
