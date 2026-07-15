@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "@/widgets/app-sidebar";
 import { AppHeader } from "@/widgets/app-header";
+import { VisitedTabs } from "@/widgets/visited-tabs";
 
 const COLLAPSED_KEY = "bo:sidebar-collapsed";
 
@@ -42,6 +43,8 @@ export function AppLayout() {
           onMenuClick={() => setMobileOpen(true)}
           onToggleCollapse={() => setCollapsed((c) => !c)}
         />
+        {/* 방문한 메뉴 탭바 — 레이아웃이 라우트 이동에도 유지되므로 탭 목록이 살아있다 */}
+        <VisitedTabs />
         <main className="flex-1 overflow-y-auto p-6">
           {/* 본문 폭 제한 없음 — 사이드바를 뺀 나머지 전체를 쓴다(컬럼 많은 표 대응). */}
           <Outlet />

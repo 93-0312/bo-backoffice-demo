@@ -6,6 +6,7 @@ import {
   useFilters,
   serializeFilters,
   parseFilters,
+  clearFilterMemory,
   type FilterValues,
   type DateRangeValue,
 } from "@/widgets/filter-bar";
@@ -137,6 +138,55 @@ describe("widgets/filter-bar · useFilters persist:'storage'", () => {
   it("persist:'none' 은 아무것도 저장하지 않는다(새로고침 시 초기화)", () => {
     const { result } = renderHook(
       () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "none", storageKey: "test-menu" }),
+      { wrapper },
+    );
+    act(() => result.current.setValue("search", "abc"));
+    expect(localStorage.getItem(STORE_KEY)).toBeNull();
+  });
+});
+
+/**
+ * persist:"memory" — 라우트 이동(언마운트→리마운트) 시 복원을 훅 레벨로 검증.
+ * 모듈 Map 저장소라 새로고침 시뮬레이션은 clearFilterMemory 로 대신한다.
+ */
+describe("widgets/filter-bar · useFilters persist:'memory'", () => {
+  beforeEach(() => clearFilterMemory());
+
+  it("메뉴 이탈 후 재방문(리마운트) 시 값이 복원된다", () => {
+    const first = renderHook(
+      () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "memory", storageKey: "test-menu" }),
+      { wrapper },
+    );
+    act(() => first.result.current.setValue("status", "SUCCESS"));
+    first.unmount();
+
+    // 다른 메뉴 갔다가 돌아온 상황 — 새 마운트가 메모리 저장값을 읽어온다.
+    const second = renderHook(
+      () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "memory", storageKey: "test-menu" }),
+      { wrapper },
+    );
+    expect(second.result.current.values.status).toBe("SUCCESS");
+  });
+
+  it("새로고침(메모리 소멸) 후에는 defaults 로 초기화된다", () => {
+    const first = renderHook(
+      () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "memory", storageKey: "test-menu" }),
+      { wrapper },
+    );
+    act(() => first.result.current.setValue("status", "SUCCESS"));
+    first.unmount();
+
+    clearFilterMemory(); // 새로고침 시뮬레이션 — 모듈 메모리가 사라진다.
+    const second = renderHook(
+      () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "memory", storageKey: "test-menu" }),
+      { wrapper },
+    );
+    expect(second.result.current.values.status).toBe("");
+  });
+
+  it("localStorage 에는 아무것도 남기지 않는다", () => {
+    const { result } = renderHook(
+      () => useFilters({ defaults: STORAGE_DEFAULTS, persist: "memory", storageKey: "test-menu" }),
       { wrapper },
     );
     act(() => result.current.setValue("search", "abc"));

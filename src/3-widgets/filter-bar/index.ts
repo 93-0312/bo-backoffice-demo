@@ -10,6 +10,7 @@ export {
   useFilters,
   serializeFilters,
   parseFilters,
+  clearFilterMemory,
   type FilterValue,
   type FilterValues,
   type DateRangeValue,

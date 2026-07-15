@@ -33,7 +33,8 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
-      port: 5180,
+      // PORT 환경변수 우선(도구가 빈 포트를 주입하는 경우) — 없으면 로컬 기본 5180.
+      port: Number(process.env.PORT || env.PORT) || 5180,
       // 실 BO(dev) 프록시 — 브라우저 CORS 우회용. `/bo-api/*` → BO_API_TARGET.
       // 데모 기본은 mock 이므로 이 프록시는 "실서버 모드"에서만 실제로 쓰인다.
       proxy: {

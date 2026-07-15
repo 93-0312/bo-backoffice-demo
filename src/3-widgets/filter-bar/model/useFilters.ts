@@ -11,6 +11,8 @@ import { useSearchParams } from "react-router-dom";
  *      "url"     — ?search=…&period.from=… 반영. 새로고침·뒤로가기·링크 공유 유지.
  *      "storage" — localStorage(bo-filters:<storageKey>) 저장. 새로고침엔 유지되지만
  *                  URL 은 깨끗하고 공유는 안 됨(운영자 개인의 상용 필터에 적합).
+ *      "memory"  — 모듈 메모리(Map) 저장. 같은 세션 안에서 메뉴를 떠났다 돌아오면
+ *                  복원되고, 새로고침하면 초기화(기존 BO 의 방문 탭 동작과 동일).
  *      "none"    — (기본) 컴포넌트 상태만. 새로고침하면 defaults 로 초기화.
  *  - 디바운스(debounceKeys): 검색어처럼 타이핑마다 조회하면 안 되는 키만 지연 반영.
  *    `values`(입력용 즉시값)와 `debouncedValues`(조회용)를 분리해 돌려준다.
@@ -86,19 +88,31 @@ export function parseFilters<T extends FilterValues>(
 }
 
 /** 새로고침 시 필터 유지 방식 — 메뉴(페이지)마다 선택한다. */
-export type FilterPersistMode = "url" | "storage" | "none";
+export type FilterPersistMode = "url" | "storage" | "memory" | "none";
 
 /** persist:"storage" 의 localStorage 키 접두사(테이블 storageKey 와 동일한 관례). */
 const FILTER_STORE_PREFIX = "bo-filters:";
+
+/**
+ * persist:"memory" 저장소 — 모듈 스코프 Map 이라 라우트 이동(언마운트)에는 살아남고,
+ * 새로고침하면 JS 메모리와 함께 사라진다. 저장 포맷은 storage 와 동일한 평면 레코드.
+ */
+const memoryStore = new Map<string, Record<string, string>>();
+
+/** persist:"memory" 저장값 전체 삭제 — 테스트 격리·로그아웃 시 사용. */
+export function clearFilterMemory() {
+  memoryStore.clear();
+}
 
 export interface UseFiltersOptions<T extends FilterValues> {
   defaults: T;
   /**
    * 유지 방식: "url"(쿼리 반영 — 새로고침+공유 유지) / "storage"(localStorage —
-   * 새로고침만 유지, URL 깨끗) / "none"(기본 — 새로고침 시 초기화).
+   * 새로고침만 유지, URL 깨끗) / "memory"(세션 내 재방문 유지, 새로고침 초기화)
+   * / "none"(기본 — 새로고침 시 초기화).
    */
   persist?: FilterPersistMode;
-  /** persist:"storage" 저장 키(페이지마다 고유하게). 없으면 storage 여도 저장 안 함. */
+  /** persist:"storage"/"memory" 저장 키(페이지마다 고유하게). 없으면 저장 안 함. */
   storageKey?: string;
   /** 이 키들만 debouncedValues 반영을 지연(검색어 등). */
   debounceKeys?: (keyof T)[];
@@ -128,6 +142,10 @@ export function useFilters<T extends FilterValues>({
       } catch {
         /* 손상된 저장값은 무시하고 defaults 로 */
       }
+    }
+    if (persist === "memory" && storeKey) {
+      const record = memoryStore.get(storeKey);
+      if (record) return parseFilters(new URLSearchParams(record), base);
     }
     return base;
   });
@@ -162,6 +180,14 @@ export function useFilters<T extends FilterValues>({
     } catch {
       /* 무시 */
     }
+  }, [values, persist, storeKey]);
+
+  // persist:"memory" — values → 모듈 Map (전부 기본값이면 키를 지운다).
+  useEffect(() => {
+    if (persist !== "memory" || !storeKey) return;
+    const record = serializeFilters(values, defaultsRef.current);
+    if (Object.keys(record).length === 0) memoryStore.delete(storeKey);
+    else memoryStore.set(storeKey, record);
   }, [values, persist, storeKey]);
 
   // 디바운스 대상 키만 지연 미러링 → debouncedValues 로 합성.

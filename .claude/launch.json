@@ -4,8 +4,9 @@
     {
       "name": "bo-backoffice-demo",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5190", "--strictPort"],
-      "port": 5190
+      "runtimeArgs": ["run", "dev", "--", "--strictPort"],
+      "port": 5190,
+      "autoPort": true
     }
   ]
 }
